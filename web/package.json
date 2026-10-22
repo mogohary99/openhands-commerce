@@ -14,7 +14,8 @@
     "typecheck": "tsc --noEmit -p .",
     "test": "node --conditions=react-server --import tsx --test test/unit/*.test.ts",
     "test:e2e": "node --env-file-if-exists=.env.local ./node_modules/.bin/playwright test",
-    "test:all": "npm run typecheck && npm test && npm run test:e2e"
+    "test:all": "npm run typecheck && npm test && npm run test:live && npm run build && npm run test:e2e",
+    "test:live": "node --env-file-if-exists=.env.local --conditions=react-server --import tsx --test test/live/*.test.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "1.1.0",

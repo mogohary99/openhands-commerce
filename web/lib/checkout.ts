@@ -128,10 +128,15 @@ export type CaptureResult =
   | { kind: "in_progress"; orderId: string }
   | { kind: "unknown"; orderId: string }
   | { kind: "mismatch"; orderId: string }
+  | { kind: "refused"; orderId: string } // PayPal refused; this PayPal order can't be retried
+  | { kind: "expired"; orderId: string } // PayPal no longer knows this order
   | { kind: "not_found" }
   | { kind: "error"; orderId: string; reason: string };
 
 const CAPTURABLE = ["PAYPAL_CREATED", "CANCELLED", "DECLINED", "CAPTURE_UNKNOWN"] as const;
+// A CAPTURING lock older than this means the process died mid-capture. The outcome is
+// unknown, so it becomes CAPTURE_UNKNOWN and is resolved by asking PayPal (same request id).
+export const STALE_CAPTURE_LOCK_MS = 2 * 60 * 1000;
 
 // Called when PayPal sends the shopper back to our return_url.
 export async function completePayment(deps: CheckoutDeps, sessionId: string, paypalOrderId: string): Promise<CaptureResult> {
@@ -145,6 +150,10 @@ async function captureRow(deps: CheckoutDeps, row: OrderRow): Promise<CaptureRes
   const { store } = deps;
   const paypal = deps.paypal!;
   const ids = { sessionId: row.sessionId, orderId: row.id };
+  const now = (deps.now ?? (() => new Date()))().getTime();
+  if (row.state === "CAPTURING" && now - new Date(row.updatedAt).getTime() > STALE_CAPTURE_LOCK_MS) {
+    if (store.transition(row.id, ["CAPTURING"], "CAPTURE_UNKNOWN")) store.audit("capture.stale_lock_recovered", ids);
+  }
   if (!store.transition(row.id, [...CAPTURABLE], "CAPTURING")) return stateResult(store.getOrder(row.id)!);
 
   try {
@@ -185,7 +194,20 @@ async function captureRow(deps: CheckoutDeps, row: OrderRow): Promise<CaptureRes
     }
     if (err instanceof PayPalError) {
       store.audit("capture.paypal_error", ids, { status: err.status, issue: err.issue, debugId: err.debugId });
+      // A 5xx on capture means PayPal may or may not have captured: never treat as failed.
+      if (err.status >= 500) {
+        store.updateOrder(row.id, { state: "CAPTURE_UNKNOWN", statusReason: `HTTP_${err.status}`, debugId: err.debugId });
+        return { kind: "unknown", orderId: row.id };
+      }
       switch (err.issue) {
+        case "TRANSACTION_REFUSED":
+        case "MAX_NUMBER_OF_PAYMENT_ATTEMPTS_EXCEEDED":
+          store.updateOrder(row.id, { state: "FAILED", statusReason: err.issue, debugId: err.debugId });
+          return { kind: "refused", orderId: row.id };
+        case "INVALID_RESOURCE_ID":
+        case "RESOURCE_NOT_FOUND":
+          store.updateOrder(row.id, { state: "FAILED", statusReason: "PAYPAL_ORDER_EXPIRED", debugId: err.debugId });
+          return { kind: "expired", orderId: row.id };
         case "INSTRUMENT_DECLINED":
         case "PAYER_ACTION_REQUIRED": {
           const retryUrl = err.body?.links?.find((l) => l.rel === "redirect" || l.rel === "payer-action")?.href ?? row.approveUrl;
@@ -281,7 +303,7 @@ export function cancelPayment(deps: CheckoutDeps, sessionId: string, paypalOrder
 export async function reconcile(deps: CheckoutDeps, orderId: string): Promise<CaptureResult> {
   const row = deps.store.getOrder(orderId);
   if (!row?.paypalOrderId || !deps.paypal) return { kind: "not_found" };
-  if (row.state === "CAPTURE_UNKNOWN") return captureRow(deps, row); // same capture request id: safe to repeat
+  if (row.state === "CAPTURE_UNKNOWN" || row.state === "CAPTURING") return captureRow(deps, row); // same capture request id: safe to repeat
   if (row.state !== "PENDING" && row.state !== "COMPLETED") return stateResult(row);
   const o = await deps.paypal.getOrder(row.paypalOrderId);
   if (!firstCapture(o.body)) return stateResult(row);
@@ -315,8 +337,10 @@ export async function handleWebhook(
   let verified = false;
   try {
     verified = await deps.paypal.verifyWebhookSignature(rawBody, h as WebhookHeaders, webhookId);
-  } catch {
-    return { status: 502, message: "Could not verify signature with PayPal" }; // PayPal retries later
+  } catch (err) {
+    // PayPal rejected the verification request itself (malformed headers, unknown webhook id): not authentic.
+    if (err instanceof PayPalError && err.status < 500) return { status: 400, message: "Signature verification failed" };
+    return { status: 502, message: "Could not verify signature with PayPal" }; // transient: PayPal retries later
   }
   if (!verified || !event.id || !event.event_type) return { status: 400, message: "Signature verification failed" };
 

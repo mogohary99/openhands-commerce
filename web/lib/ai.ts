@@ -15,7 +15,7 @@ import type { Finding, Quote } from "./verify";
 // and every job has a rule-based fallback, so the store works with the model down.
 
 const MODEL = "claude-opus-5-5";
-const TIMEOUT_MS = 12_000;
+const TIMEOUT_MS = Number(process.env.AI_TIMEOUT_MS) || 12_000;
 
 export const isAiConfigured = () => Boolean(process.env.ANTHROPIC_API_KEY);
 

@@ -27,6 +27,10 @@ export async function GET(req: NextRequest) {
       return to("/review?notice=not_approved");
     case "needs_reapproval":
       return to("/review?notice=reapprove");
+    case "refused":
+      return to("/review?notice=refused");
+    case "expired":
+      return to("/review?notice=expired");
     case "mismatch":
       return to("/review?notice=payment_error");
     case "error":

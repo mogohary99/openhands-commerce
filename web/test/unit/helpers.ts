@@ -14,7 +14,11 @@ export class FakePayPal implements PayPalApi {
   calls: Array<{ op: string; id?: string; requestId?: string }> = [];
   next = 1;
   captureBehavior: "complete" | "pending" | "declined_422" | "unreachable" | "capture_declined" = "complete";
-  webhookValid = true;
+  webhookValid: boolean | "paypal_400" | "unreachable" = true;
+  // Recorded from live sandbox negative testing (PayPal-Mock-Response), 2026-10-23.
+  captureError: { status: number; issue: string } | null = null;
+  getError: { status: number; issue: string } | null = null;
+  tamperCurrency: string | null = null;
   tamperAmount: string | null = null;
 
   async createOrder(body: any, requestId: string): Promise<PayPalResponse<PayPalOrder>> {
@@ -38,9 +42,14 @@ export class FakePayPal implements PayPalApi {
     const o = this.orders.get(id)!;
     o.status = "APPROVED";
     if (this.tamperAmount) o.purchase_units![0]!.amount!.value = this.tamperAmount;
+    if (this.tamperCurrency) o.purchase_units![0]!.amount!.currency_code = this.tamperCurrency;
   }
   async getOrder(id: string): Promise<PayPalResponse<PayPalOrder>> {
     this.calls.push({ op: "get", id });
+    if (this.getError) {
+      const { PayPalError } = await import("../../lib/paypal");
+      throw new PayPalError(this.getError.status, this.getError.issue, "dbg-get", { details: [{ issue: this.getError.issue }] });
+    }
     const o = this.orders.get(id);
     if (!o) throw new Error("not found");
     return { status: 200, debugId: "dbg", body: structuredClone(o) };
@@ -50,6 +59,7 @@ export class FakePayPal implements PayPalApi {
     const { PayPalError, PayPalUnreachableError } = await import("../../lib/paypal");
     const o = this.orders.get(id)!;
     if (this.captureBehavior === "unreachable") throw new PayPalUnreachableError("timeout");
+    if (this.captureError) throw new PayPalError(this.captureError.status, this.captureError.issue, "dbg-mock", { details: [{ issue: this.captureError.issue }], links: [{ rel: "information_link", href: "https://developer.paypal.com" }] });
     if (this.captureBehavior === "declined_422") throw new PayPalError(422, "INSTRUMENT_DECLINED", "dbg-decl", { details: [{ issue: "INSTRUMENT_DECLINED" }] });
     const prior = this.captureRequestIds.get(id);
     if (prior && prior !== requestId) throw new PayPalError(422, "ORDER_ALREADY_CAPTURED", "dbg", null);
@@ -65,6 +75,9 @@ export class FakePayPal implements PayPalApi {
   }
   async verifyWebhookSignature(_raw: string, _h: WebhookHeaders, _id: string): Promise<boolean> {
     this.calls.push({ op: "verify" });
+    const { PayPalError, PayPalUnreachableError } = await import("../../lib/paypal");
+    if (this.webhookValid === "paypal_400") throw new PayPalError(400, "VALIDATION_ERROR", "dbg", null);
+    if (this.webhookValid === "unreachable") throw new PayPalUnreachableError("down");
     return this.webhookValid;
   }
   count(op: string) {
