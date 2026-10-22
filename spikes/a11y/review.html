@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Check your order – OpenHands Commerce (demo store)</title>
+<style>
+  :root { --fg:#1a1a1a; --bg:#ffffff; --muted:#4a4a4a; --line:#767676; --accent:#0b57d0; --accent-fg:#ffffff;
+          --warn-bg:#fff4e5; --warn-line:#a15c00; --ok-bg:#e8f5e9; --ok-line:#1b6e20; --focus:#ffbf47; }
+  @media (prefers-color-scheme: dark) {
+    :root { --fg:#f2f2f2; --bg:#121212; --muted:#c8c8c8; --line:#9a9a9a; --accent:#8ab4f8; --accent-fg:#0b0b0b;
+            --warn-bg:#3a2a10; --warn-line:#ffb74d; --ok-bg:#12301a; --ok-line:#81c784; }
+  }
+  * { box-sizing: border-box; }
+  html { font-size: 112.5%; scroll-padding-bottom: 6rem; }
+  body { margin:0; font: 1rem/1.5 system-ui, sans-serif; color:var(--fg); background:var(--bg); }
+  .skip { position:absolute; left:-999px; } .skip:focus { left:1rem; top:1rem; background:var(--bg); padding:.5rem; }
+  main { max-width: 42rem; margin: 0 auto; padding: 1rem; }
+  h1 { font-size: 1.75rem; line-height: 1.2; }
+  dl { display:grid; grid-template-columns: minmax(8rem, max-content) 1fr; gap:.5rem 1rem; margin:0; }
+  dt { font-weight:600; } dd { margin:0; overflow-wrap:anywhere; }
+  .panel { border:3px solid var(--warn-line); background:var(--warn-bg); padding:1rem; border-radius:.5rem; margin:1rem 0; }
+  .panel.ok { border-color:var(--ok-line); background:var(--ok-bg); }
+  .panel h2 { margin-top:0; font-size:1.25rem; }
+  button { font: inherit; min-height: 44px; min-width: 44px; padding: .5rem 1rem; border-radius:.5rem; border:2px solid var(--fg); background:var(--bg); color:var(--fg); cursor:pointer; }
+  button.primary { background:var(--accent); color:var(--accent-fg); border-color:var(--accent); font-weight:600; }
+  button[aria-disabled="true"] { opacity: .75; cursor: not-allowed; border-style: dashed; }
+  :focus-visible { outline: 4px solid var(--focus); outline-offset: 2px; box-shadow: 0 0 0 7px #1a1a1a; }
+  .actions { display:flex; flex-wrap:wrap; gap: 1rem; margin-top: 1.5rem; }
+  .visually-hidden { position:absolute !important; width:1px; height:1px; overflow:hidden; clip-path: inset(50%); white-space:nowrap; }
+  .notice { color: var(--muted); font-size: .95rem; }
+  @media (prefers-reduced-motion: no-preference) { .panel { transition: background-color .2s; } }
+</style>
+</head>
+<body>
+<a class="skip" href="#main">Skip to main content</a>
+<header><p class="notice" style="margin:1rem">OpenHands Demo Store — fictional products, PayPal <strong>sandbox</strong> (no real money).</p></header>
+<main id="main">
+  <h1 id="page-title" tabindex="-1">Check your order before you pay</h1>
+
+  <div id="finding" class="panel" role="alert" aria-labelledby="finding-title">
+    <h2 id="finding-title"><span aria-hidden="true">⚠ </span>The cable will not fit your phone</h2>
+    <p id="finding-text">This bundle includes a Lightning cable, but you said your phone uses USB-C.</p>
+    <button type="button" id="fix">Switch to the USB-C cable bundle (same price)</button>
+  </div>
+
+  <h2>Your order</h2>
+  <dl id="summary">
+    <dt>Item</dt><dd id="item">VoltLine 30W USB-C Wall Charger — White + 1 m USB-C to Lightning cable</dd>
+    <dt>Quantity</dt><dd>1</dd>
+    <dt>Items</dt><dd>$31.99</dd>
+    <dt>Shipping</dt><dd>$5.99</dd>
+    <dt>Tax</dt><dd>$2.64</dd>
+    <dt>Total</dt><dd><strong>$40.62</strong> (your budget: $45.00)</dd>
+  </dl>
+
+  <div class="actions">
+    <button type="button" class="primary" id="approve" aria-disabled="true" aria-describedby="approve-help">Approve and pay $40.62 with PayPal</button>
+    <button type="button" id="cancel">Cancel, keep my cart</button>
+  </div>
+  <p id="approve-help" class="notice">Fix the problem above to continue. PayPal opens in a new window; you will come back here after paying.</p>
+
+  <div id="status" role="status" class="visually-hidden"></div>
+</main>
+<script>
+  const $ = (id) => document.getElementById(id);
+  $("fix").addEventListener("click", () => {
+    $("item").textContent = "VoltLine 30W USB-C Wall Charger — White + 1 m USB-C to USB-C cable";
+    const panel = $("finding");
+    panel.setAttribute("role", "region");
+    panel.classList.add("ok");
+    $("finding-title").textContent = "Fixed: the cable now fits your phone";
+    $("finding-text").textContent = "You now have the USB-C to USB-C cable. The total is still $40.62, which is within your $45.00 budget.";
+    $("fix").remove();
+    $("approve").setAttribute("aria-disabled", "false");
+    $("approve-help").textContent = "PayPal opens in a new window; you will come back here after paying.";
+    $("status").textContent = "Changed to the USB-C cable bundle. Your order now matches. Total $40.62.";
+    $("approve").focus();
+  });
+  $("approve").addEventListener("click", () => {
+    if ($("approve").getAttribute("aria-disabled") === "true") {
+      $("status").textContent = "You can't pay yet. The cable will not fit your phone. Fix the problem first.";
+      $("fix").focus();
+      return;
+    }
+    $("status").textContent = "Opening PayPal sandbox.";
+    document.body.dataset.approved = "true";
+  });
+  $("cancel").addEventListener("click", () => { $("status").textContent = "Cancelled. Your cart is saved."; });
+</script>
+</body>
+</html>
