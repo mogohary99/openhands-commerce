@@ -66,7 +66,7 @@ Fulfil **only** on capture status `COMPLETED`, not order status (schema guidance
 |---|---|---|
 | Order body derived solely from verified quote, breakdown sums (40.62 = 31.99 + 5.99 + 2.64) | **PASS (offline)** | `spikes/test/paypal.test.ts` |
 | LIVE: OAuth token, create order (CREATED, amount 40.62), idempotent replay returns same order id, GET order shows approve link, capture-before-approval refused (expect 422), tampered total refused (expect 422) | **PASS (2026-10-23, sandbox).** create 201 `0YA28922XJ1702225` CREATED (debug_id f14286963069a); replay with same PayPal-Request-Id → 200, same order id; approve link present; capture-before-approval → 422 `ORDER_NOT_APPROVED`; tampered total → 422 `AMOUNT_MISMATCH` | `spikes/test/paypal.test.ts` (test is written and typechecks) |
-| Full approve + capture + idempotent capture replay as sandbox buyer | **IN PROGRESS (2026-10-23):** order `946825133C0963026` ($40.62) created; awaiting sandbox-buyer approval | `spikes/scripts/sandbox-checkout.ts` |
+| Full approve + capture + idempotent capture replay as sandbox buyer | **NOT COMPLETED (2026-10-23):** order `946825133C0963026` ($40.62) created; script timed out after 10 min with status `CREATED` because no sandbox buyer approved it. Nothing captured. Automated in `web/test/e2e/live-paypal.spec.ts` once `PAYPAL_SANDBOX_BUYER_EMAIL`/`PASSWORD` are set in `web/.env.local`. | `spikes/scripts/sandbox-checkout.ts` |
 | Webhooks, negative testing (`INSTRUMENT_DECLINED`) | **NOT STARTED** | Planned day 1–2 of build |
 
 **No PayPal API test has been executed. Nothing above should be read as a passed live test.**

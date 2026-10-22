@@ -63,8 +63,9 @@ let cached: LoadedCatalog | undefined;
 // A malformed file throws here and the app refuses to serve, rather than guessing.
 export function getCatalog(): LoadedCatalog {
   if (!cached) {
-    const file = process.env.CATALOG_PATH ?? path.join(process.cwd(), "data", "catalog.json");
-    cached = parseCatalog(readFileSync(file, "utf8"));
+    const override = process.env.CATALOG_PATH;
+    const raw = override ? readFileSync(/*turbopackIgnore: true*/ override, "utf8") : readFileSync(path.join(process.cwd(), "data", "catalog.json"), "utf8");
+    cached = parseCatalog(raw);
   }
   return cached;
 }
