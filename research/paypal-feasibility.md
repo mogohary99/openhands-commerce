@@ -81,3 +81,7 @@ Fulfil **only** on capture status `COMPLETED`, not order status (schema guidance
 ## 7. Feasibility verdict
 
 **Feasible with standard, publicly available sandbox APIs.** Nothing in the core plan depends on special access. The agentic-commerce products (Agent Ready, Store Sync, ACP/UCP) are context for the pitch, not dependencies. Remaining risk is confined to (a) running the live tests above, (b) negative-testing behaviour, (c) PayPal popup behaviour with screen readers.
+
+## 7. Live negative-testing results (2026-10-23)
+
+`PayPal-Mock-Response: {"mock_application_codes": "<CODE>"}` on `POST /v2/checkout/orders/{id}/capture` returned: `INSTRUMENT_DECLINED`, `TRANSACTION_REFUSED`, `MAX_NUMBER_OF_PAYMENT_ATTEMPTS_EXCEEDED`, `PAYER_ACTION_REQUIRED` → HTTP 422 with only an `information_link`; `INTERNAL_SERVER_ERROR` → HTTP 500. The mock is returned even when the buyer hasn't approved. Unknown order → 404 `INVALID_RESOURCE_ID`; edited quantity → 422 `ITEM_TOTAL_MISMATCH`; EUR amount with USD breakdown → 422 `MULTI_CURRENCY_ORDER`; fake webhook verification → 400. Full table: `docs/qa-report.md` §3.

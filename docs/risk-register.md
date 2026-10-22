@@ -5,7 +5,7 @@ Likelihood / Impact: L / M / H.
 | # | Risk | L | I | Mitigation | Trigger / owner |
 |---|---|---|---|---|---|
 | R1 | Live PayPal sandbox: server-side create/replay/refusals **passed Oct 23**; buyer approve + capture pending | L | H | Run `scripts/sandbox-checkout.ts` as sandbox buyer (G1). Orders v2 is public and well-documented. | Any failure in `paypal.test.ts` → fix before any UI work |
-| R2 | Negative-testing behaviour (decline on capture) differs from docs | M | M | Test day 1; if mock doesn't work on capture, demo decline via create-time mock or sandbox card that declines; describe honestly | G2 |
+| R2 | Negative-testing behaviour (decline on capture) differs from docs — **confirmed works on capture (Oct 23), but returns mock even pre-approval** | L | M | Test day 1; if mock doesn't work on capture, demo decline via create-time mock or sandbox card that declines; describe honestly | G2 |
 | R3 | PayPal popup inaccessible to some AT / blocked | M | H | Our accessible approval precedes it; announce; focus handling; **redirect fallback**; document limitation | Manual AT matrix |
 | R4 | Model hallucinates prices/claims or follows injected review text | M | H | Server is source of truth; model has no payment tools; explanation validator + deterministic fallback (unit-tested against planted injection) | Eval set; any validator failure rate > 0 on eval → tighten prompt/schema |
 | R5 | Anthropic API outage/rate limit during judging | L | M | Flow works with deterministic explanations when model is down; cache-friendly prompts | Health check on hosted demo |
@@ -22,3 +22,5 @@ Likelihood / Impact: L / M / H.
 | R16 | PayPal idempotency retention shorter than assumed (≈6 h) | M | L | Our own DB idempotency is authoritative | — |
 | R17 | Judges evaluate from text + video only (allowed by rules) | H | M | Video must carry the whole proof (dashboard cut, real IDs); README shows exact test output | Storyboard |
 | R18 | Claude Opus 5.5 API specifics (no forced tool_choice, effort default medium) | L | L | Already handled in spike (structured outputs, explicit effort); typecheck passes | — |
+| R19 | Sandbox client secret pasted in chat transcript | M | L | Rotate before repo goes public (steps in qa-report §5) | Before publishing |
+| R20 | No manual AT testing yet (VoiceOver AppleScript disabled; no AT users) | H | H | Owner-run VoiceOver checklist; recruit AT users now | G5 |

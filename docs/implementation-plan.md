@@ -1,5 +1,38 @@
 # Implementation Plan — to submission on Nov 12, 2026 (12:00 PT)
 
+## Status — 2026-10-23 (updated)
+
+Ahead of plan: the Week 1 core flow is built and tested on localhost (`web/`). Evidence: `docs/qa-report.md`.
+
+| Gate / item | Status |
+|---|---|
+| G1 sandbox keys + live tests | ✅ server side live (create, replay, refusals, mocked declines, 500 retry). ❌ **buyer approve + capture not yet run** (needs buyer creds) |
+| G2 negative testing | ✅ `PayPal-Mock-Response` works on capture (422 codes, 500); 4 bugs found and fixed |
+| G3 Anthropic key + eval | ❌ no key; fallback tested via SDK + fake server; live tests written |
+| G4 InnoSearch hands-on | ❌ owner |
+| G5 AT recruitment | ❌ owner — now the critical path |
+| G6 Channel3 | Recommend **drop**: it distracts from the signature demo |
+
+### Judging-criteria review (what moves the score next)
+
+| Criterion | Now | Next highest-value step |
+|---|---|---|
+| Technological Implementation | Server-verified quote, idempotent create/capture, live-tested failure mapping, verified webhooks, 78 unit + 11 live + 21 E2E | Real buyer capture on video; hosted webhook delivery; CSP |
+| Design | Hyperlegible type, check-answers pattern, problem panel with side-by-side comparison, light/dark | Manual VoiceOver pass; polish receipt; product photos/illustrations |
+| Potential Impact | Clear problem + stats; merchant scale story | 3–5 AT-user sessions with quotes (honestly reported) |
+| Innovation/Idea | Pre-payment semantic verification + accessible block/fix | Show one more mismatch type in 5 s (language) only if time |
+| Presentation | Storyboard + `demo-checklist.md` | Record with VoiceOver audio; captions |
+
+### Revised next steps
+
+1. Owner: buyer creds → run live buyer E2E → record capture IDs in qa-report.
+2. Owner: Anthropic key → `npm run test:live` → decide whether the demo shows Claude badges.
+3. Manual VoiceOver pass (owner runs, checklist provided) → fix findings.
+4. Hosting (after approval): Render with persistent disk, `APP_BASE_URL`, webhook ID, CSP.
+5. Feature freeze Nov 8 unchanged; record Nov 9.
+
+---
+
 **Internal deadline: submit Wed Nov 11, 18:00 PT.** Nov 12 morning is buffer only. Today is Thu Oct 22 → ~20 working days.
 
 ## Phase 0 gate items (must happen before/at start of build)
