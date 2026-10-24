@@ -18,7 +18,7 @@ You tell OpenHands what you need in your own words. Before PayPal is ever opened
 
 ## Inspiration
 
-Most of the time, a wrong purchase is caught at a glance: the wrong cable, the wrong language, a total over budget. For a blind shopper, that glance is a screen reader reading a long product page, and the mistake often surfaces only when the parcel arrives. Meanwhile AI shopping agents promise to help, but trust is fragile: in a June 2026 ACI/YouGov survey of UK consumers, 60% said they'd stop using an AI shopping agent after one mistake **[re-verify against the primary release before quoting]**. We wanted an assistant whose most important feature is the moment it *stops* you.
+Most of the time, a wrong purchase is caught at a glance: the wrong cable, the wrong language, a total over budget. For a blind shopper, that glance is a screen reader reading a long product page, and the mistake often surfaces only when the parcel arrives. Meanwhile AI shopping agents promise to help, but trust is fragile: in a YouGov survey of 2,080 UK adults commissioned by ACI Worldwide (published June 29, 2026), six in ten said they would stop using an AI shopping agent after just one mistake. We wanted an assistant whose most important feature is the moment it *stops* you.
 
 ## What it does
 
@@ -36,14 +36,14 @@ Also checked: wrong voice language ("talks in Spanish" vs English-only), out of 
 - **Next.js 16 (App Router), React 19, TypeScript (strict)**, server actions for every state change, SQLite (better-sqlite3) for carts, approvals, PayPal order ids, webhook de-duplication and an audit log.
 - **Deterministic verification engine** (`web/lib/verify.ts`): compares each cart line with the shopper's stated needs and the catalog, computes the all-in total in integer cents, and produces findings with evidence and the fixes it will accept. The quote is hashed; the hash is what the shopper approves.
 - **Payment state machine** (`web/lib/checkout.ts`): compare-and-set transitions (`APPROVED_BY_USER → PAYPAL_CREATED → CAPTURING → COMPLETED / PENDING / DECLINED / CAPTURE_UNKNOWN / NEEDS_REAPPROVAL / FAILED`), re-verification immediately before capture, recovery of a stale capture lock after a crash.
-- **Accessibility-first UI**: Atkinson Hyperlegible type, focus management on every state change, one polite live region, 44 px targets, light/dark, forced colours and reduced motion supported, reflow to 320 px.
+- **Accessibility-first UI**: Atkinson Hyperlegible type, focus management on every state change (focus waits until the page has its title), a single site-wide polite live region, 44 px targets, light/dark, forced colours and reduced motion supported, reflow to 320 px.
 
 ## PayPal integration
 
 - **Orders v2 REST API (Sandbox)**: `POST /v2/checkout/orders` with intent `CAPTURE`, full amount breakdown (item total, shipping, tax), line items, `custom_id` = hash of the approved quote, `invoice_id`, and `experience_context` return/cancel URLs; `POST …/capture`; `GET …/orders/{id}` for independent verification and reconciliation.
 - **Idempotency**: deterministic `PayPal-Request-Id` (UUIDv5) for create and capture, so double clicks, retries and replays return the same order/capture. Our own database enforces the same rule with compare-and-set.
-- **Webhooks**: `POST /v1/notifications/verify-webhook-signature` on every event before it is read; duplicate event ids ignored; a webhook can never mark an order paid by itself (state always comes from `GET` order).
-- **Negative testing**: PayPal's `PayPal-Mock-Response` header was used against the live sandbox to produce real declined/refused/5xx payloads; four handling bugs were found and fixed this way (see `docs/qa-report.md` §3).
+- **Webhooks**: `POST /v1/notifications/verify-webhook-signature` on every event before it is read; duplicate event ids ignored; a webhook can never mark an order paid by itself (state always comes from `GET` order). Without a configured webhook id every event is rejected. **[Real webhook delivery has not been tested: it needs the hosted URL. The verify call was tested live with forged headers (PayPal returned 400); the event handling is unit-tested.]**
+- **Negative testing**: PayPal's `PayPal-Mock-Response` header was used against the live sandbox to produce real declined/refused/5xx payloads; three handling bugs were found and fixed this way (a mis-mapped refusal, a 500 treated as failed instead of unknown, a forged webhook answered with 502) (see `docs/qa-report.md` §3).
 - **Sandbox only**: the API base URL is hard-coded to `api-m.sandbox.paypal.com` and a unit test fails if that ever changes.
 
 ## AI integration
@@ -57,7 +57,7 @@ Also checked: wrong voice language ("talks in Spanish" vs English-only), out of 
 ## Accessibility
 
 What we did (details and evidence in `docs/qa-report.md` §6):
-- Automated axe-core checks (WCAG 2.0/2.1/2.2 A/AA + best practice) on every state of the flow, light and dark: 0 violations.
+- Automated axe-core checks (WCAG 2.0/2.1/2.2 A/AA + best practice), light and dark: 0 violations on home, results, review (blocked, fixed, every recovery notice) and the receipt in each state (completed, pending, unconfirmed, not paid). The receipt states use local fixture orders; a receipt from a real capture has not been scanned yet.
 - Keyboard-only end-to-end flow, focus order and focus movement asserted in tests.
 - Chrome's computed accessibility tree inspected at the signature moment (what screen readers receive): the problem is a named region with its explanation as description; "Approve" is announced as unavailable with the reason.
 - 320 px reflow with WCAG text spacing, a 400 %-zoom-equivalent viewport, 200 % text, forced colours, reduced motion, 44 × 44 px targets.
@@ -74,6 +74,8 @@ What we have **not** done, stated plainly:
 - **"Unknown" is a real payment state.** A 500 from PayPal on capture may still mean money moved. We treat it as `CAPTURE_UNKNOWN` and reconcile with `GET` order using the same request id — never as "failed", never as "paid". Live negative testing showed our first version got this wrong.
 - **Making a blocked button discoverable.** A disabled button is invisible to keyboard users. Ours stays focusable, is announced as unavailable with its reason, and moves focus to the fix when pressed.
 - **Letting an LLM help without letting it decide.** Every model output is a suggestion validated against server facts; the safety rules live in deterministic code with tests.
+
+- **A one-frame accessibility race.** An end-to-end test failed about 1 run in 40. The cause: on client-side navigation the framework shows the new page a frame before its title, and our focus moved in that frame, so a screen reader could meet a page with no name. We reproduced it, fixed it, and added a regression test that fails 21 of 40 runs without the fix.
 
 ## Accomplishments we're proud of
 
@@ -99,7 +101,7 @@ next.js · react · typescript · paypal-orders-api · paypal-webhooks · paypal
 
 - **Hosted demo:** **[URL — not deployed yet; needs owner approval]**. Free, no sign-up.
 - **PayPal Sandbox buyer (test money only):** email **[sandbox personal account email]** / password **[sandbox password]** — create a dedicated sandbox personal account for judges; never a real PayPal login.
-- **Try:** press the first example ("My phone uses USB-C…") → in the first product choose "White + 1 m USB-C to Lightning cable" → Add to order → press Approve (blocked) → press the fix → Approve and pay $40.62 → log in with the sandbox buyer → receipt.
+- **Try:** under "Or try an example", press the first one ("My phone uses USB-C…") → in the first product choose "White + 1 m USB-C to Lightning cable" → Add to order → press Approve (blocked) → press the fix → Approve and pay $40.62 → log in with the sandbox buyer → receipt.
 - **Run locally:** `web/README.md` (Node 20.9+, `npm ci`, sandbox keys in `web/.env.local`, `npm run build && npm start`).
 
 ## Disclosures (keep these in the submission)

@@ -1,5 +1,7 @@
 # Product Spec — OpenHands Commerce
 
+> This is the product spec written before the build. Some planned items were cut or simplified. What actually exists is in `docs/architecture.md`, with test evidence in `docs/qa-report.md`.
+
 ## One line
 
 An accessible AI shopping companion that **checks the thing before you pay for it**: it finds products in a verified merchant catalog, explains its recommendations with evidence, catches configuration, price and budget mismatches before payment, and completes a PayPal checkout only after the shopper explicitly approves an exact, verified quote.
@@ -37,8 +39,8 @@ We are honest about scope: **OpenHands sells from a verified merchant catalog wh
 5. **Verify** (server, deterministic): unknown item, stock, quantity sanity, duplicate line, price drift since shown, connector/language/variant compatibility, **all-in total (items + shipping + tax) vs budget**.
 6. **Explain**: blocking findings shown as an accessible alert with a one-click fix (e.g., "Switch to the USB-C cable bundle (same price)"). AI writes the plain-language explanation; the server validates it (no unsupported amounts, every finding covered, no payment claims) or falls back to deterministic text.
 7. **Approve**: check-answers summary; Approve button includes the amount; approval is bound to the exact quote hash.
-8. **Pay**: PayPal JS SDK v6 popup (or redirect fallback) on a sandbox order built only from the approved quote.
-9. **Receipt**: verified by the server from PayPal capture status, accessible HTML receipt with order + capture IDs; email/plain-text copy.
+8. **Pay**: full-page redirect to PayPal Sandbox's approval page for an order built only from the approved quote. (The JS SDK popup in the original plan was not built; it's listed under "What's next".)
+9. **Receipt**: verified by the server from PayPal capture status, accessible HTML receipt with order + capture IDs. (An email or plain-text copy was not built.)
 10. **Recovery**: cancel, decline, pending, expired order, double click — each with a calm plain-language message and a safe next step.
 
 ## Feature list and priority

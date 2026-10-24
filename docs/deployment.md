@@ -2,18 +2,25 @@
 
 Nothing has been deployed or published. Going live needs the owner's explicit approval, and the hackathon rules require the demo to stay up and free until **Dec 15, 2026, 8:00 am PT** (`research/devpost-rules-verified.md`).
 
-## Choice: Render, one web service with a persistent disk
+## Options compared (2026-10-24, prices from official pages; full table and sources: `research/hosting-options-2026-10.md`)
 
-| Need | Why Render fits |
-|---|---|
-| SQLite state (carts, approvals, PayPal order ids, webhook de-duplication) | Render persistent disks survive deploys; serverless hosts (e.g. Vercel) have no durable local disk |
-| One process | A disk pins the service to a single instance — exactly what the in-process compare-and-set locks and rate limits assume |
-| HTTPS, health checks, env secrets, logs | Built in (`healthCheckPath`, dashboard env vars, log stream) |
-| Hackathon | Render is a listed sponsor tool (whether hosting alone qualifies for its prize is unverified) |
+The app needs one always-on Node process, a disk that survives restarts and deploys (SQLite), HTTPS and an inbound webhook, publicly available and free for judges until **Dec 15, 2026, 8:00 am PT**. Cost estimates cover Nov 1 – Dec 15.
 
-Cost: a disk requires a paid instance (`starter`). Free instances have no disk and would lose orders on restart — don't use them for the judged demo.
+| Option | Est. cost | Verdict |
+|---|---|---|
+| **Fly.io**: 1 × shared-cpu-1x 512 MB, 1 GB volume, `min_machines_running = 1` | **≈ $6** | Cheapest reliable option. Needs a Dockerfile and `fly.toml`. **Not prepared here**: Docker isn't installed on this machine, so a Dockerfile couldn't be built or tested locally |
+| **Render**: Starter + 1 GB disk (`render.yaml` ready) | **≈ $11** | The least setup, and the blueprint is already written. Brief downtime on each deploy because of the disk |
+| Railway Hobby + volume | ≈ $10 | Similar to Render. The usage estimate is unverified |
+| Hetzner CX23 + Caddy | ≈ €9 | You run the server yourself. EU only at that price |
+| Render Free, Koyeb Free | $0 | **Not viable**: no persistent disk, and they sleep |
+| Vercel / Netlify | $0 | **Not viable without a rewrite**: no durable filesystem. Would need libSQL, with locks and rate limits moved into the database |
+| Oracle Always Free, GCP e2-micro, Northflank Sandbox | $0 | **Not recommended**: idle reclamation (Oracle), DIY ops and 1 GB RAM (GCP), "not for production" (Northflank). All need a card |
 
-Blueprint: `render.yaml` at the repo root (`autoDeploy: false`).
+**Recommendation:** Render Starter + disk (≈ $11). The blueprint already exists, there's no container to maintain, and Render is a listed sponsor tool (whether that qualifies for its prize is unverified). If the ~$5 saving matters, Fly.io is the alternative: I would add and test a Dockerfile only once Docker or Fly's remote builder can be used. Every option needs a card and the owner's approval. **Nothing has been subscribed or deployed.**
+
+Why not a free tier: the free tiers that sleep or have no disk would either lose orders on restart or keep judges waiting about a minute on first load. The rules require the demo to stay available until Dec 15.
+
+Blueprint: `render.yaml` at the repo root (`autoDeploy: false`). The disk pins the service to one instance, which is exactly what the in-process compare-and-set locks and rate limits assume.
 
 ## Steps (owner)
 
@@ -26,6 +33,13 @@ Blueprint: `render.yaml` at the repo root (`autoDeploy: false`).
 4. Deploy. Check `https://<host>/api/health` returns `"ok": true, "database": "ok", "paypal": "sandbox-configured", "baseUrl": "https"`.
 5. Webhook: developer.paypal.com → Apps & Credentials (Sandbox) → the app → **Add webhook** → URL `https://<host>/api/paypal/webhook` → events `CHECKOUT.ORDER.APPROVED`, `PAYMENT.CAPTURE.COMPLETED`, `PAYMENT.CAPTURE.PENDING`, `PAYMENT.CAPTURE.DENIED`, `PAYMENT.CAPTURE.REFUNDED`. Copy the **Webhook ID** into `PAYPAL_WEBHOOK_ID`, redeploy. Until then the endpoint answers 503 and the app relies on its own capture + `GET /v2/checkout/orders` verification (webhooks are a backstop, never the source of "paid").
 6. Smoke test on the hosted URL: signature flow → PayPal Sandbox login as the sandbox **personal** buyer → receipt → confirm the same capture id in the sandbox business account's activity.
+
+## Backups and rollback
+
+- **Before every deploy and once a day until Dec 15:** run `npm run db:backup` from the Render shell (`cd web && DATABASE_PATH=/var/data/openhands.sqlite npm run db:backup -- /var/data/backup-$(date +%F).sqlite`). It makes a consistent online copy, runs `integrity_check` and prints the order count. Download a copy off the box now and then (Render shell → `cat` to your machine, or `scp` on a VPS). Render's automatic daily disk snapshots are a second layer.
+- **Code rollback:** Render dashboard → the service → Events → pick the last good deploy → **Rollback**. Because `autoDeploy: false`, nothing goes live without a manual deploy. Check `/api/health` and run the smoke test afterwards.
+- **Data rollback** (only if the database is corrupted): stop the service, copy the last good backup over `/var/data/openhands.sqlite`, and delete any `-wal`/`-shm` files next to it. Start the service, then check `/api/health` → `database: ok`. Orders made after that backup still exist at PayPal. Find them in the sandbox business account's activity and reconcile with `GET /v2/checkout/orders/{id}`.
+- **If the host is down during judging:** the Devpost page links the video and the local setup instructions (`web/README.md`), which the rules accept instead of a hosted URL.
 
 ## What is configured in code
 
