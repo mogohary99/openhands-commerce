@@ -42,3 +42,11 @@ export async function chooseLightningByKeyboard(page: Page) {
   // Focus moves to the problem once the page's script has run; wait for it, as a shopper would.
   await expect(page.locator("#problem-0")).toBeFocused();
 }
+
+// Signature flow up to an approvable order: Lightning bundle chosen, then fixed in one press.
+export async function reachApprovedQuote(page: Page) {
+  await searchByKeyboard(page);
+  await chooseLightningByKeyboard(page);
+  await page.locator("#fix-0").click();
+  await expect(page.locator("#fixed-panel")).toBeVisible();
+}
