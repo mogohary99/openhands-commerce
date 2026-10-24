@@ -1,6 +1,6 @@
 # Technical QA Report — OpenHands Commerce MVP
 
-_Run dates: 2026-10-23, updated 2026-10-24 (local, macOS 26.2, Node 20.20.2, Chrome via Playwright 1.64.1). Latest results are for commit `fd0297c` and later._
+_Run dates: 2026-10-23, updated 2026-10-24 (local, macOS 26.2, Node 20.20.2, Chrome via Playwright 1.64.1). Latest results are for commit `a607df7` (2026-10-24)._
 
 Legend: **LIVE** = real call to PayPal Sandbox / Anthropic. **AUTO** = automated, no external service. **MANUAL** = performed by a person. **NOT RUN** = not executed (reason given).
 
@@ -8,27 +8,35 @@ Legend: **LIVE** = real call to PayPal Sandbox / Anthropic. **AUTO** = automated
 
 | Question | Answer |
 |---|---|
-| Did a real sandbox buyer approve a payment? | **No.** `PAYPAL_SANDBOX_BUYER_EMAIL`/`PASSWORD` are still empty in `web/.env.local` (checked 2026-10-24), and the PayPal developer dashboard requires the owner's Face ID / Touch ID login, which we do not bypass. |
+| Did a real sandbox buyer approve a payment? | **No.** `PAYPAL_SANDBOX_BUYER_EMAIL`/`PASSWORD` are still empty in `web/.env.local` (rechecked 2026-10-24, file unchanged since Oct 23), and the PayPal developer dashboard requires the owner's Face ID / Touch ID login, which we do not bypass. A manual path that needs no stored password is ready: `npm run purchase:manual` (the owner logs in at PayPal; §3a). |
 | Does PayPal independently confirm a capture? | **No capture exists yet.** The buyer-flow test that asserts it via `GET /v2/checkout/orders/{id}` is written and **skipped**. |
-| Was live Claude tested? | **No.** `ANTHROPIC_API_KEY` is not set; 4 live tests skipped. Fallback paths were tested through the real SDK against a local fake server (AUTO). |
+| Was live Claude tested? | **No.** `ANTHROPIC_API_KEY` is not set; 7 live Claude tests (extraction, injection, mismatch and over-budget explanations, comparison intro, planted review, real timeout) skipped. Fallback paths were tested through the real SDK against a local fake server (AUTO). |
 | Was real assistive-technology testing performed? | **No.** No VoiceOver/NVDA/Voice Control/Switch Control session and no testing with disabled users. Chrome's accessibility tree was inspected automatically. |
 | Real money? | None possible: PayPal base URL hard-coded to sandbox; enforced by a unit test. |
 
-## 2. Commands and exact results (2026-10-24, `npm run test:all`, exit 0)
+## 2. Commands and exact results (2026-10-24, final `npm run test:all`, exit 0)
 
 | Command | Result |
 |---|---|
 | `web: npm run typecheck` | clean |
 | `web: npm test` (AUTO unit) | **81 tests, 81 pass, 0 fail, 0 skipped** |
-| `web: npm run test:live` (LIVE) | **15 tests, 11 pass, 0 fail, 4 skipped** (Claude: `ANTHROPIC_API_KEY not set`) |
+| `web: npm run test:live` (LIVE) | **18 tests, 11 pass, 0 fail, 7 skipped** (Claude: `ANTHROPIC_API_KEY not set`) |
 | `web: npm run build` | ok |
-| `web: npm run test:e2e` (AUTO + LIVE) | **28 tests, 27 pass, 0 fail, 1 skipped** (buyer purchase: `PAYPAL_SANDBOX_BUYER_EMAIL / PAYPAL_SANDBOX_BUYER_PASSWORD not set`) |
+| `web: npm run test:e2e` (AUTO + LIVE) | **40 tests, 38 pass, 0 fail, 2 skipped** (buyer purchase: buyer credentials not set; manual purchase: runs only via `npm run purchase:manual`) |
 | `spikes: npm test` | 26 tests, 23 pass, 0 fail, 3 skipped (Claude key) |
 | `web: npm audit --omit=dev` | 0 vulnerabilities |
+| Secret in git history | 0 matches (`git log -p --all`, all revisions) |
 
-**Flake observed:** in 1 of ~10 full E2E runs on 2026-10-24, `signature.spec.ts` failed once (run immediately after other local servers had been started/stopped); it then passed 9 consecutive full runs and 3 isolated runs, and the failure could not be reproduced. Earlier focus-timing flakes (tests asserting focus before hydration) were fixed by waiting for the focus move as a shopper would.
+### Flaky test: root cause found and fixed (2026-10-24)
 
-Previous run (2026-10-23): unit 78/78, live 11 pass/4 skipped, E2E 20 pass/1 skipped.
+- **Symptom:** `signature.spec.ts` "signature moment" failed about 1 run in 10 full runs (2.3 s in, so early). Reruns passed, which proved nothing.
+- **Reproduced:** 1 of 40 with `--repeat-each=40`. The failure was axe `document-title (serious)` on the blocked review page.
+- **Measured:** a probe recorded `document.title` at every DOM mutation and focus event. In 10 of 25 runs, focus moved to `#problem-0` while the page had **no `<title>`**.
+- **Root cause:** the navigation from results to review is client-side. Next.js commits the new page a frame before it re-inserts the route's `<title>`. `FocusOnMount` focused after one animation frame, sometimes inside that gap. Real impact: a screen reader could meet a page with no name, and axe was right.
+- **Ruled out:** streaming metadata. In the server HTML, `<title>` is already in `<head>` (checked with and without `htmlLimitedBots`, so that change was reverted).
+- **Fix:** `components/FocusOnMount.tsx` waits until `document.title` is set (at most about 30 frames) before moving focus. Commit `0633d5c`.
+- **Regression test:** `test/e2e/focus-title.spec.ts` records the title at every focus move. Without the fix it fails **21 of 40**; with the fix it passes **40 of 40**. The signature moment passes **40 of 40**.
+- **Knock-on:** `signature.spec.ts` "bypassed guard" read the focused element once, right after the content appeared. Because focus now arrives a frame or two later, it failed once in the full run. It now waits for focus, and still requires `#problem-0`. The three affected specs then passed **104 of 104**.
 
 ### 2a. Release gates
 
@@ -37,18 +45,21 @@ Previous run (2026-10-23): unit 78/78, live 11 pass/4 skipped, E2E 20 pass/1 ski
 | TypeScript clean | **PASS** |
 | Production build | **PASS** |
 | Unit tests | **PASS** (81/81) |
-| Browser E2E | **PASS** (27/27 run; 1 skipped = buyer purchase) |
+| Browser E2E | **PASS** (38/38 run; 2 skipped = buyer purchase, manual purchase) |
+| Flaky test | **FIXED** (root cause found; regression test fails 21/40 without the fix, passes 40/40 with it) |
 | Real sandbox buyer-approved capture | **BLOCKED** — buyer credentials not provided |
 | PayPal-verified amount and currency of a capture | **BLOCKED** — same (test asserts `COMPLETED`, `USD`, `40.62`, one capture after refresh/replays/re-capture; written, not run) |
 | No known duplicate-charge vulnerability | **PASS (no known issue)** — AUTO + LIVE pre-approval evidence; post-capture replay against real PayPal is **BLOCKED** |
 | AI fallback when Claude fails | **PASS** (AUTO through the real SDK against a fake server) |
 | Live Claude | **NOT TESTED** — no `ANTHROPIC_API_KEY` |
 | Accessible keyboard journey | **PASS** (AUTO) |
-| Screen-reader evaluation | **NOT TESTED** (manual VoiceOver/NVDA pass not done) |
+| Screen-reader evaluation | **NOT TESTED** (manual VoiceOver/NVDA pass not done; prioritized checklist ready: `docs/accessibility/voiceover-checklist.md`) |
+| Receipt page accessibility | **PASS (fixture states)**: axe light/dark, focus and title for COMPLETED, PENDING, CAPTURE_UNKNOWN, FAILED from local fixture rows; a receipt from a real capture is **NOT TESTED** |
+| CSRF on Server Actions | **PASS**: forged-origin post refused, same-origin post works (E2E) |
 | Testing with disabled users | **NOT TESTED** |
 | No exposed credentials in repo | **PASS** (secret still needs rotation: it's in one chat transcript) |
 | No open critical/high security defects | **PASS (none known)** |
-| Hosted deployment | **NOT TESTED** — prepared (`render.yaml`), not deployed (needs approval) |
+| Hosted deployment | **NOT TESTED**: prepared (`render.yaml`, options compared in `docs/deployment.md`), not deployed (needs approval and a card) |
 | Demo video recorded | **NOT DONE** — script ready |
 | Devpost submission | **DRAFT** — `docs/submission/devpost.md` |
 
@@ -77,6 +88,15 @@ All against `api-m.sandbox.paypal.com` with the project's sandbox REST app. Fail
 **Not produced live:** PENDING capture, completed capture, refunds, real webhook delivery (needs a public URL + `PAYPAL_WEBHOOK_ID`). These are covered by AUTO tests with a fake PayPal only.
 
 Earlier manual script order `946825133C0963026` was never approved; it timed out at `CREATED`; nothing captured.
+
+
+### 3a. Manual buyer purchase (prepared, NOT RUN)
+
+`cd web && npm run build && npm run purchase:manual` opens Chrome on a temporary profile and drives the store to PayPal Sandbox. It then waits up to 10 minutes while the owner logs in with the sandbox **personal** account and pays. No buyer credentials are read or stored. After the redirect it runs the same verification as the automated buyer test (`test/e2e/paypal-verify.ts`):
+- PayPal reports the order `COMPLETED`: 40.62 USD, with 5.99 shipping and 2.64 tax, `custom_id` present, exactly one capture, that capture `COMPLETED` for 40.62 USD with the same id the receipt shows.
+- Reloading the receipt and replaying the return URL, with and without PayerID, leave the receipt unchanged. The cart is closed.
+- A direct re-capture with the app's request id returns the same capture. With a fresh request id PayPal answers 422 `ORDER_ALREADY_CAPTURED`. Afterwards there is still exactly one capture.
+- Evidence (ids and statuses only) goes to `docs/evidence/sandbox-purchase-manual-buyer.json`.
 
 ## 4. Payment failure & security matrix
 
