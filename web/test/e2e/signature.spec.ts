@@ -56,7 +56,8 @@ test("server refuses a blocked cart even if the client-side guard is bypassed", 
   await page.waitForURL("**/review?notice=blocked");
   await expect(page.locator("#problem-0")).toBeVisible();
   await expect(page.locator("#review-notice")).toContainText("Nothing was charged");
-  expect(await activeId(page)).toBe("problem-0");
+  // Focus moves once the page has its title (FocusOnMount); wait for it as a shopper would.
+  await expect(page.locator("#problem-0")).toBeFocused();
 });
 
 test("over-budget and quantity changes are re-verified on the server", async ({ page }) => {
