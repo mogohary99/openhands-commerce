@@ -24,3 +24,6 @@ Likelihood / Impact: L / M / H.
 | R18 | Claude Opus 5.5 API specifics (no forced tool_choice, effort default medium) | L | L | Already handled in spike (structured outputs, explicit effort); typecheck passes | — |
 | R19 | Sandbox client secret pasted in chat transcript | M | L | Rotate before repo goes public (steps in qa-report §5) | Before publishing |
 | R20 | No manual AT testing yet (VoiceOver AppleScript disabled; no AT users) | H | H | Owner-run VoiceOver checklist; recruit AT users now | G5 |
+| R21 | Video/screens show third-party connector names (Lightning, USB-C); rules forbid unlicensed trademarks in the video | M | L | Names used only descriptively, no logos; owner to review before recording, or swap the demo connector for a generic one | Before recording |
+| R22 | Rules require the demo to stay free and up until Dec 15, 8:00 am PT | M | H | Render paid instance + disk (`render.yaml`), health check, budget for ~5 weeks; keep the rules-only fallback so it works without an API key | At deployment |
+| R23 | Judges need working test access; self-hosting would expose our keys | M | M | Hosted demo + a dedicated sandbox buyer account in the testing instructions | At deployment |

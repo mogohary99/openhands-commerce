@@ -17,7 +17,7 @@ Ahead of plan: the Week 1 core flow is built and tested on localhost (`web/`). E
 
 | Criterion | Now | Next highest-value step |
 |---|---|---|
-| Technological Implementation | Server-verified quote, idempotent create/capture, live-tested failure mapping, verified webhooks, 78 unit + 11 live + 21 E2E | Real buyer capture on video; hosted webhook delivery; CSP |
+| Technological Implementation | Server-verified quote, idempotent create/capture, live-tested failure mapping, verified webhooks, 81 unit + 11 live + 27 E2E, nonce CSP, rate limits | Real buyer capture on video; hosted webhook delivery |
 | Design | Hyperlegible type, check-answers pattern, problem panel with side-by-side comparison, light/dark | Manual VoiceOver pass; polish receipt; product photos/illustrations |
 | Potential Impact | Clear problem + stats; merchant scale story | 3–5 AT-user sessions with quotes (honestly reported) |
 | Innovation/Idea | Pre-payment semantic verification + accessible block/fix | Show one more mismatch type in 5 s (language) only if time |
@@ -28,7 +28,7 @@ Ahead of plan: the Week 1 core flow is built and tested on localhost (`web/`). E
 1. Owner: buyer creds → run live buyer E2E → record capture IDs in qa-report.
 2. Owner: Anthropic key → `npm run test:live` → decide whether the demo shows Claude badges.
 3. Manual VoiceOver pass (owner runs, checklist provided) → fix findings.
-4. Hosting (after approval): Render with persistent disk, `APP_BASE_URL`, webhook ID, CSP.
+4. Hosting (after approval): Render with persistent disk, `APP_BASE_URL`, webhook ID — prepared in `render.yaml` / `docs/deployment.md`; CSP done 2026-10-24.
 5. Feature freeze Nov 8 unchanged; record Nov 9.
 
 ---
