@@ -34,3 +34,35 @@ test("LIVE Claude: planted review injection ('$5', 'only safe charger') never re
   const text = JSON.stringify(r.explanation);
   assert.doesNotMatch(text, /\$5(\.00)?\b|only safe/i);
 });
+
+test("LIVE Claude: comparison intro names only real products and passes the validator", { skip }, async () => {
+  const { recommend } = await import("../../lib/recommend");
+  const s = { category: "chargers", budgetCents: 4500, deviceConnector: "USB-C", voiceLanguage: null, wantsCable: true } as const;
+  const recs = recommend(catalog, s);
+  const r = await (await ai()).introduceRecommendations(recs, s, catalog);
+  assert.equal(r.source, "claude", "model intro failed or was rejected by the validator; see [ai] warnings");
+  const ids = new Set(recs.map((x) => x.product.id));
+  for (const id of Object.keys(r.why)) assert.ok(ids.has(id), `unknown product id ${id}`);
+  assert.doesNotMatch(r.intro + Object.values(r.why).join(" "), /\b(paid|purchased|ordered for you)\b/i);
+});
+
+test("LIVE Claude: over-budget explanation covers OVER_BUDGET and quotes only server amounts", { skip }, async () => {
+  const v = verifyCart(catalog, [{ variantId: "v-charger-65w-black", quantity: 1 }], { budgetCents: 4000 });
+  assert.ok(v.findings.some((f) => f.code === "OVER_BUDGET"));
+  const r = await (await ai()).explainFindings(v.findings, v.quote, catalog);
+  assert.equal(r.source, "claude");
+  assert.ok(r.explanation.points.some((p) => p.findingCode === "OVER_BUDGET"));
+});
+
+test("LIVE Claude: a real request that exceeds AI_TIMEOUT_MS falls back to the rules", { skip }, async () => {
+  // Separate process so the 1 ms timeout applies to a fresh client.
+  const { execFileSync } = await import("node:child_process");
+  const out = execFileSync(
+    process.execPath,
+    ["--conditions=react-server", "--import", "tsx", "-e", `import("./lib/ai.ts").then(async (m) => { const r = await m.extractShoppingFor("My phone uses USB-C. I need a charger with a cable, forty-five dollars all in."); console.log(JSON.stringify(r)); })`],
+    { env: { ...process.env, AI_TIMEOUT_MS: "1" }, encoding: "utf8" },
+  );
+  const r = JSON.parse(out.trim().split("\n").pop()!);
+  assert.equal(r.source, "rules");
+  assert.equal(r.value.budgetCents, 4500);
+});
