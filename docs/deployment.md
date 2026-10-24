@@ -1,0 +1,57 @@
+# Deployment (prepared, NOT deployed)
+
+Nothing has been deployed or published. Going live needs the owner's explicit approval, and the hackathon rules require the demo to stay up and free until **Dec 15, 2026, 8:00 am PT** (`research/devpost-rules-verified.md`).
+
+## Choice: Render, one web service with a persistent disk
+
+| Need | Why Render fits |
+|---|---|
+| SQLite state (carts, approvals, PayPal order ids, webhook de-duplication) | Render persistent disks survive deploys; serverless hosts (e.g. Vercel) have no durable local disk |
+| One process | A disk pins the service to a single instance — exactly what the in-process compare-and-set locks and rate limits assume |
+| HTTPS, health checks, env secrets, logs | Built in (`healthCheckPath`, dashboard env vars, log stream) |
+| Hackathon | Render is a listed sponsor tool (whether hosting alone qualifies for its prize is unverified) |
+
+Cost: a disk requires a paid instance (`starter`). Free instances have no disk and would lose orders on restart — don't use them for the judged demo.
+
+Blueprint: `render.yaml` at the repo root (`autoDeploy: false`).
+
+## Steps (owner)
+
+1. Push the repo to GitHub (public, after the pre-publication checklist in `docs/submission/public-repo-checklist.md`).
+2. Render → New → Blueprint → select the repo. It creates `openhands-commerce` with a 1 GB disk at `/var/data`.
+3. In the service's Environment tab set:
+   - `APP_BASE_URL` = the service URL, e.g. `https://openhands-commerce.onrender.com` (no trailing slash). PayPal `return_url`/`cancel_url` are built from this, and `https://` turns on Secure cookies, HSTS and `upgrade-insecure-requests`.
+   - `PAYPAL_CLIENT_ID`, `PAYPAL_CLIENT_SECRET` — the **rotated** sandbox app credentials.
+   - `ANTHROPIC_API_KEY` — optional; without it the site runs rules-only and says so.
+4. Deploy. Check `https://<host>/api/health` returns `"ok": true, "database": "ok", "paypal": "sandbox-configured", "baseUrl": "https"`.
+5. Webhook: developer.paypal.com → Apps & Credentials (Sandbox) → the app → **Add webhook** → URL `https://<host>/api/paypal/webhook` → events `CHECKOUT.ORDER.APPROVED`, `PAYMENT.CAPTURE.COMPLETED`, `PAYMENT.CAPTURE.PENDING`, `PAYMENT.CAPTURE.DENIED`, `PAYMENT.CAPTURE.REFUNDED`. Copy the **Webhook ID** into `PAYPAL_WEBHOOK_ID`, redeploy. Until then the endpoint answers 503 and the app relies on its own capture + `GET /v2/checkout/orders` verification (webhooks are a backstop, never the source of "paid").
+6. Smoke test on the hosted URL: signature flow → PayPal Sandbox login as the sandbox **personal** buyer → receipt → confirm the same capture id in the sandbox business account's activity.
+
+## What is configured in code
+
+| Concern | Where |
+|---|---|
+| HTTPS-only behaviour | `proxy.ts` (HSTS, CSP `upgrade-insecure-requests`), `lib/session.ts` (Secure cookie) — all read `APP_BASE_URL` at **runtime**, so one build works locally and hosted |
+| CSP | `lib/csp.ts`, per-request nonce |
+| PayPal return/cancel URLs | `lib/paypal.ts` `orderBodyFromQuote`, from `APP_BASE_URL` |
+| Health | `GET /api/health`: 200 with integration status (never values); **503 if the database can't be read** so the host stops routing |
+| Error monitoring | `instrumentation.ts` `onRequestError`: one JSON line per server error on stderr (path without query, route, digest, error name, truncated message; no bodies, cookies, headers or tokens). Render's log stream collects it; a log drain (e.g. to an alerting service) can be added in the Render dashboard without code changes |
+| Port | `npm start` honours `$PORT` |
+| Database | `DATABASE_PATH=/var/data/openhands.sqlite` (WAL mode) |
+| Backups | Render disk snapshots (daily, automatic on paid plans) |
+
+## Verified locally (2026-10-24)
+
+`NODE_ENV=production`, `APP_BASE_URL=https://ohc.example.test`, `PORT=3300`, fresh `DATABASE_PATH`:
+- `Strict-Transport-Security: max-age=31536000; includeSubDomains` present; CSP ends with `upgrade-insecure-requests`.
+- Same build with `APP_BASE_URL=http://localhost:3300`: neither header present (correct for local http).
+- `/api/health` → 200, `database: ok`, `baseUrl: https`, `Cache-Control: no-store`, deny-all CSP.
+- SQLite file created at `DATABASE_PATH`.
+
+**NOT TESTED:** an actual Render build/deploy, the disk, real HTTPS, Secure-cookie behaviour behind Render's proxy, and real webhook delivery. These need the deployment the owner has not yet approved.
+
+## Limits to know
+
+- Single instance by design. Horizontal scaling would need Postgres (same compare-and-set transitions) and a shared rate-limit store.
+- Rate limits are per process and reset on restart.
+- A shopper who finishes PayPal in a different browser than they started in has no session cookie on return; nothing is captured and they're told nothing was charged.

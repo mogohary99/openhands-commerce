@@ -150,6 +150,11 @@ export class Store {
     return this.now().toISOString();
   }
 
+  // For health checks: the database file is open and writable-mode readable.
+  ping(): boolean {
+    return (this.db.prepare("SELECT 1 AS ok").get() as { ok: number }).ok === 1;
+  }
+
   // --- shopping-for ---
   getShopping(sessionId: string): { query: string; shoppingFor: ShoppingFor; source: ConstraintSource } | null {
     const r = this.db.prepare("SELECT * FROM shopping WHERE session_id = ?").get(sessionId) as Raw | undefined;

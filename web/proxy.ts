@@ -5,15 +5,15 @@ import { buildCsp, newNonce } from "@/lib/csp";
 // layout reads the session cookie), so Next.js can stamp the nonce on its scripts.
 export function proxy(request: NextRequest) {
   const nonce = newNonce();
-  const csp = buildCsp(nonce, {
-    dev: process.env.NODE_ENV === "development",
-    https: (process.env.APP_BASE_URL ?? "").startsWith("https://"),
-  });
+  // Read at request time, not build time, so one build works locally and when hosted.
+  const https = (process.env.APP_BASE_URL ?? "").startsWith("https://");
+  const csp = buildCsp(nonce, { dev: process.env.NODE_ENV === "development", https });
   const headers = new Headers(request.headers);
   headers.set("x-nonce", nonce);
   headers.set("Content-Security-Policy", csp);
   const res = NextResponse.next({ request: { headers } });
   res.headers.set("Content-Security-Policy", csp);
+  if (https) res.headers.set("Strict-Transport-Security", "max-age=31536000; includeSubDomains");
   return res;
 }
 

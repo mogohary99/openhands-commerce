@@ -1,0 +1,38 @@
+# Render Blueprint for OpenHands Commerce (not deployed yet — needs the owner's approval).
+# One web service with a persistent disk for the SQLite database. A disk pins the service
+# to a single instance, which is what the in-process locks and rate limits assume.
+services:
+  - type: web
+    name: openhands-commerce
+    runtime: node
+    plan: starter # persistent disks need a paid instance
+    region: oregon
+    rootDir: web
+    buildCommand: npm ci && npm run build
+    startCommand: npm start
+    healthCheckPath: /api/health
+    autoDeploy: false
+    disk:
+      name: data
+      mountPath: /var/data
+      sizeGB: 1
+    envVars:
+      - key: NODE_VERSION
+        value: "20.20.2"
+      - key: NODE_ENV
+        value: production
+      - key: DATABASE_PATH
+        value: /var/data/openhands.sqlite
+      # The public https URL of this service, e.g. https://openhands-commerce.onrender.com.
+      # PayPal return/cancel URLs are built from it; https turns on Secure cookies and HSTS.
+      - key: APP_BASE_URL
+        sync: false
+      # Secrets: entered in the Render dashboard, never committed.
+      - key: PAYPAL_CLIENT_ID
+        sync: false
+      - key: PAYPAL_CLIENT_SECRET
+        sync: false
+      - key: PAYPAL_WEBHOOK_ID
+        sync: false
+      - key: ANTHROPIC_API_KEY
+        sync: false
