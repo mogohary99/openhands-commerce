@@ -1,10 +1,12 @@
 "use server";
 
+import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { extractShoppingFor } from "@/lib/ai";
 import { acceptCurrentPrice, addVariant, applySuggestedVariant, type CartOpResult, removeLine, setQuantity } from "@/lib/cart";
 import { beginPayment, reconcile } from "@/lib/checkout";
 import { EMPTY_SHOPPING_FOR, shoppingForFromForm, toUserConstraints } from "@/lib/constraints";
+import { clientKey, LIMITS, limiter, type LimitName } from "@/lib/ratelimit";
 import { getDeps } from "@/lib/runtime";
 import { ensureSessionId, readSessionId } from "@/lib/session";
 import type { FindingCode } from "@/lib/verify";
@@ -22,10 +24,19 @@ const int = (f: FormData, k: string) => {
   return Number.isInteger(n) ? n : NaN;
 };
 
+// Limits apply per session and per client address, so a new cookie doesn't reset them.
+// The address limit is looser: several shoppers can share one network.
+async function allowed(name: LimitName, sid: string | null) {
+  const ip = clientKey(await headers());
+  if (!limiter.take(name, `ip:${ip}`, { ...LIMITS[name], max: LIMITS[name].max * 5 })) return false;
+  return !sid || limiter.take(name, `sid:${sid}`);
+}
+
 export async function searchAction(form: FormData) {
   const q = str(form, "q", 500).trim();
   if (!q) redirect("/?notice=empty_query#search");
   const sid = await ensureSessionId();
+  if (!(await allowed("search", sid))) redirect("/?notice=slow_down#search");
   const { value, source } = await extractShoppingFor(q);
   getDeps().store.saveShopping(sid, q, value, source);
   redirect("/?searched=1#results");
@@ -33,6 +44,7 @@ export async function searchAction(form: FormData) {
 
 export async function updateShoppingAction(form: FormData) {
   const sid = await ensureSessionId();
+  if (!(await allowed("cart", sid))) redirect("/?notice=slow_down");
   const { store } = getDeps();
   const s = shoppingForFromForm({
     category: str(form, "category"),
@@ -49,6 +61,7 @@ export async function addToOrderAction(form: FormData) {
   const variantId = str(form, "variantId");
   if (!variantId) redirect("/?notice=choose_option#results");
   const sid = await ensureSessionId();
+  if (!(await allowed("cart", sid))) redirect("/?notice=slow_down#results");
   const { store, catalog } = getDeps();
   const cart = store.getOrCreateOpenCart(sid);
   const r = addVariant(catalog, cart.lines, variantId);
@@ -61,6 +74,7 @@ export async function addToOrderAction(form: FormData) {
 async function mutateCart(op: (lines: Parameters<typeof removeLine>[0]) => CartOpResult, notice: string, extra = "") {
   const sid = await readSessionId();
   if (!sid) redirect("/review");
+  if (!(await allowed("cart", sid))) redirect("/review?notice=slow_down");
   const { store } = getDeps();
   const cart = store.getOpenCart(sid);
   if (!cart) redirect("/review");
@@ -102,6 +116,7 @@ export async function approveAction(form: FormData) {
   const quoteHash = str(form, "quoteHash", 64);
   const sid = await readSessionId();
   if (!sid || !/^[0-9a-f]{64}$/.test(quoteHash)) redirect("/review?notice=changed");
+  if (!(await allowed("approve", sid))) redirect("/review?notice=slow_down");
   const r = await beginPayment(getDeps(), sid, quoteHash);
   switch (r.kind) {
     case "redirect":
@@ -126,6 +141,7 @@ export async function recheckAction(form: FormData) {
   const deps = getDeps();
   const row = deps.store.getOrder(orderId);
   if (!sid || !row || row.sessionId !== sid) redirect("/");
+  if (!(await allowed("paypalReturn", sid))) redirect(`/receipt/${orderId}`);
   try {
     await reconcile(deps, orderId);
   } catch {

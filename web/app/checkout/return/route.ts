@@ -1,5 +1,6 @@
 import { type NextRequest, NextResponse } from "next/server";
 import { completePayment } from "@/lib/checkout";
+import { clientKey, limiter } from "@/lib/ratelimit";
 import { getDeps } from "@/lib/runtime";
 import { readSessionId } from "@/lib/session";
 
@@ -13,6 +14,9 @@ export async function GET(req: NextRequest) {
   const to = (path: string) => NextResponse.redirect(new URL(path, req.nextUrl.origin), 303);
   const sid = await readSessionId();
   if (!sid || !/^[A-Z0-9]{10,40}$/.test(token)) return to("/?notice=not_found");
+  // Over the limit we capture nothing; a later return with the same token still works.
+  if (!limiter.take("paypalReturn", `sid:${sid}`) || !limiter.take("paypalReturn", `ip:${clientKey(req.headers)}`, { max: 100, windowMs: 60_000 }))
+    return to("/review?notice=slow_down");
 
   const r = await completePayment(getDeps(), sid, token);
   switch (r.kind) {

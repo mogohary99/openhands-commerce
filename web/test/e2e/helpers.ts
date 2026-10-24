@@ -39,4 +39,6 @@ export async function chooseLightningByKeyboard(page: Page) {
   await expect(page.locator(":focus")).toHaveText(/Add to order and review/);
   await page.keyboard.press("Enter");
   await page.waitForURL("**/review");
+  // Focus moves to the problem once the page's script has run; wait for it, as a shopper would.
+  await expect(page.locator("#problem-0")).toBeFocused();
 }

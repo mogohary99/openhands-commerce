@@ -32,6 +32,7 @@ const NOTICES: Record<string, { text: string; tone: "info" | "warn" }> = {
   payment_error: { text: "We stopped this payment because PayPal's details didn't match what you approved. Nothing was charged.", tone: "warn" },
   refused: { text: "PayPal refused this payment. Nothing was charged. If you approve again, we'll start a new PayPal checkout.", tone: "warn" },
   expired: { text: "That PayPal checkout expired before it was completed. Nothing was charged. Approve again to start a new one.", tone: "warn" },
+  slow_down: { text: "That was a lot of requests in a short time, so we paused. Nothing was charged. Please wait a minute, then try again.", tone: "warn" },
   fix_unavailable: { text: "That change is no longer available. Please check your order again.", tone: "warn" },
   price_accepted: { text: "New price accepted.", tone: "info" },
   updated: { text: "Quantity updated.", tone: "info" },

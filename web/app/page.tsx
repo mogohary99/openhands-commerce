@@ -22,6 +22,7 @@ const EXAMPLES = [
 const NOTICES: Record<string, string> = {
   empty_query: "Please describe what you need first.",
   choose_option: "Please choose one of the options before adding it to your order.",
+  slow_down: "That was a lot of requests in a short time. Please wait a minute, then try again.",
   not_found: "We couldn't match that PayPal payment to this browser session, so we didn't take any payment.",
 };
 
