@@ -1,5 +1,6 @@
 import { addToOrderAction, searchAction, updateShoppingAction } from "@/app/actions";
-import { CategoryArt } from "@/components/icons";
+import { CategoryArt, CheckIcon, WarningIcon } from "@/components/icons";
+import { Steps } from "@/components/Steps";
 import { FocusOnMount } from "@/components/FocusOnMount";
 import { ShoppingForForm } from "@/components/ShoppingForForm";
 import { SubmitButton } from "@/components/SubmitButton";
@@ -7,7 +8,7 @@ import { VoiceInput } from "@/components/VoiceInput";
 import { introduceRecommendations } from "@/lib/ai";
 import { getCatalog } from "@/lib/catalog";
 import { formatUsd } from "@/lib/money";
-import { describeFacts, recommend } from "@/lib/recommend";
+import { describeFacts, type Recommendation, recommend } from "@/lib/recommend";
 import { readSessionId } from "@/lib/session";
 import { getStore } from "@/lib/store";
 
@@ -44,10 +45,15 @@ export default async function ShopPage({ searchParams }: { searchParams: Promise
         </div>
       )}
 
+      <Steps current={1} />
       <section className="hero" aria-labelledby="page-title">
         <div className="card">
+          <p className="eyebrow">An accessible shopping assistant</p>
           <h1 id="page-title">What do you need?</h1>
-          <p className="lede">Describe it in your own words. We&apos;ll find options, then check your order before you pay.</p>
+          <p className="lede">
+            Describe it in your own words. Before you pay, we check every item against what you told us — and if something won&apos;t work for you,
+            we say why and fix it in one step.
+          </p>
           <form action={searchAction} id="search" role="search" aria-label="Describe what you need">
             <div className="field">
               <label htmlFor="q">Describe what you need</label>
@@ -78,21 +84,44 @@ export default async function ShopPage({ searchParams }: { searchParams: Promise
           </ul>
         </div>
 
-        <div className="card">
-          <h2>How it works</h2>
-          <ol className="reasons">
-            <li>
-              <strong>You describe it.</strong> Type, paste, or speak. You can always edit what we understood.
-            </li>
-            <li>
-              <strong>We check it before you pay.</strong> Our rules compare the item with what you said: fit, language, stock, price and your
-              all-in budget.
-            </li>
-            <li>
-              <strong>You approve.</strong> Nothing is charged until you approve the exact total and confirm with PayPal.
-            </li>
-          </ol>
-          <p className="small muted">The AI helps explain. It cannot pay, approve, or change a price.</p>
+        <div className="stack">
+          <figure className="card example-check" aria-labelledby="example-title">
+            <figcaption>
+              <h2 id="example-title">What a check looks like</h2>
+              <p className="small muted" style={{ margin: 0 }}>
+                An example. Your own order is checked the same way.
+              </p>
+            </figcaption>
+            <div className="mini-problem">
+              <p className="problem-label" style={{ margin: 0 }}>
+                Caught before you pay
+              </p>
+              <p className="mini-title">
+                <WarningIcon /> The cable will not fit your phone
+              </p>
+              <p style={{ margin: 0 }}>You said your phone uses USB-C. This bundle comes with a Lightning cable.</p>
+            </div>
+            <div className="mini-fix">
+              <CheckIcon /> <span>One step: switch to the USB-C cable bundle, same price. Then you approve the exact total.</span>
+            </div>
+          </figure>
+
+          <div className="card">
+            <h2>How it works</h2>
+            <ol className="reasons">
+              <li>
+                <strong>You describe it.</strong> Type, paste, or speak. You can always edit what we understood.
+              </li>
+              <li>
+                <strong>We check it before you pay.</strong> Our rules compare the item with what you said: fit, language, stock, price and your
+                all-in budget.
+              </li>
+              <li>
+                <strong>You approve.</strong> Nothing is charged until you approve the exact total and confirm with PayPal.
+              </li>
+            </ol>
+            <p className="small muted">The AI helps explain. It cannot pay, approve, or change a price.</p>
+          </div>
         </div>
       </section>
 
@@ -211,8 +240,67 @@ export default async function ShopPage({ searchParams }: { searchParams: Promise
               );
             })}
           </ul>
+          {recs.length > 1 && <CompareTable recs={recs} />}
         </section>
       )}
+    </div>
+  );
+}
+
+// Side-by-side facts, all from the catalog. A fact a product doesn't list is shown as
+// "Not listed", never guessed.
+function CompareTable({ recs }: { recs: Recommendation[] }) {
+  const facts = recs.map((r) => new Map(describeFacts(r.product).map((f) => [f.label, f.value])));
+  const labels = [...new Set(facts.flatMap((m) => [...m.keys()]))];
+  const lowest = (r: Recommendation) => {
+    const inStock = r.options.filter((o) => o.inStock);
+    return inStock.length ? formatUsd(Math.min(...inStock.map((o) => o.allInCents))) : "Out of stock";
+  };
+  return (
+    <div style={{ marginTop: 32 }}>
+      <h3 id="compare-title" style={{ fontSize: "var(--step-1)" }}>
+        Compare side by side
+      </h3>
+      <div className="table-scroll" role="region" aria-labelledby="compare-title" tabIndex={0}>
+        <table className="compare-table">
+          <caption className="visually-hidden">Facts from our catalog for the {recs.length} options above</caption>
+          <thead>
+            <tr>
+              <td />
+              {recs.map((r) => (
+                <th scope="col" key={r.product.id}>
+                  {r.product.name}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <th scope="row">Lowest price, all in</th>
+              {recs.map((r) => (
+                <td key={r.product.id}>{lowest(r)}</td>
+              ))}
+            </tr>
+            <tr>
+              <th scope="row">Has an option that passes our checks</th>
+              {recs.map((r) => (
+                <td key={r.product.id}>{r.bestVariantId ? "Yes" : "No"}</td>
+              ))}
+            </tr>
+            {labels.map((label) => (
+              <tr key={label}>
+                <th scope="row">{label}</th>
+                {facts.map((m, i) => (
+                  <td key={recs[i]!.product.id} className={m.has(label) ? undefined : "muted"}>
+                    {m.get(label) ?? "Not listed"}
+                  </td>
+                ))}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      <p className="small muted">All in = item, shipping and tax for one unit, calculated by our server.</p>
     </div>
   );
 }

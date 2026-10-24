@@ -55,7 +55,6 @@ export function VoiceInput({ targetId }: { targetId: string }) {
     <button
       type="button"
       className="btn btn-secondary voice-btn"
-      aria-pressed={listening}
       onClick={() => {
         if (!rec.current) return;
         if (listening) {

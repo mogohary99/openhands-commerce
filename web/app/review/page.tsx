@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { acceptPriceAction, approveAction, fixAction, quantityAction, removeAction, updateShoppingAction } from "@/app/actions";
 import { ApproveButton } from "@/components/ApproveButton";
+import { ReadAloud } from "@/components/ReadAloud";
+import { Steps } from "@/components/Steps";
 import { FocusOnMount } from "@/components/FocusOnMount";
 import { CheckIcon, LockIcon, WarningIcon } from "@/components/icons";
 import { ShoppingForForm } from "@/components/ShoppingForForm";
@@ -80,6 +82,7 @@ export default async function ReviewPage({ searchParams }: { searchParams: Promi
   return (
     <div className="stack">
       <FocusOnMount targetId={focusTarget} token={`${v.quoteHash}:${sp.notice ?? ""}`} />
+      <Steps current={2} />
       <div>
         <h1 id="review-title" tabIndex={-1}>
           Check your order before you pay
@@ -295,6 +298,8 @@ function ProblemPanel({
   const line = f.lineIndex !== null ? lines[f.lineIndex] : undefined;
   const current = line ? findVariant(catalog, line.variantId) : undefined;
   const compare = comparison(f, s, quote, current?.variant.label, line);
+  const firstFix = f.suggestedVariantIds[0] ? findVariant(catalog, f.suggestedVariantIds[0]) : undefined;
+  const spoken = [`Payment blocked. ${f.title}.`, text, firstFix ? `To fix it: ${fixLabel(f, firstFix.variant, current?.variant.priceCents)}.` : ""].join(" ");
   return (
     <section className="problem" id={id} tabIndex={-1} aria-labelledby={`${id}-title`} aria-describedby={`${id}-desc`}>
       <div className="problem-label">Problem {index + 1}: payment blocked</div>
@@ -350,6 +355,7 @@ function ProblemPanel({
           </form>
         )}
       </div>
+      <ReadAloud text={spoken} label="Read this problem aloud" />
     </section>
   );
 }

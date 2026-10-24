@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { recheckAction } from "@/app/actions";
 import { FocusOnMount } from "@/components/FocusOnMount";
 import { CheckIcon } from "@/components/icons";
+import { Steps } from "@/components/Steps";
 import { SubmitButton } from "@/components/SubmitButton";
 import { formatUsd } from "@/lib/money";
 import { getDeps } from "@/lib/runtime";
@@ -32,6 +33,7 @@ export default async function ReceiptPage({ params, searchParams }: { params: Pr
   return (
     <div className="stack">
       <FocusOnMount targetId="receipt-title" token={`${row.state}:${sp.checked ?? ""}`} />
+      <Steps current={row.state === "COMPLETED" ? 4 : 3} />
       {row.state === "COMPLETED" ? <Completed row={row} /> : <NotPaid row={row} />}
       {sp.checked && row.state !== "COMPLETED" && (
         <p role="status" className="small muted">
@@ -91,6 +93,28 @@ function Completed({ row }: { row: OrderRow }) {
           <strong>{formatUsd(row.captureAmountCents ?? 0)} USD</strong>, which matches the total you approved.
         </p>
       </div>
+      <section className="card" aria-labelledby="proof-title">
+        <h2 id="proof-title">How this payment was checked</h2>
+        <ol className="proof">
+          <li>
+            <CheckIcon size={22} /> <span>Our server checked every item against what you told us and calculated the total from the catalog.</span>
+          </li>
+          <li>
+            <CheckIcon size={22} />{" "}
+            <span>You approved exactly {formatUsd(row.quote.totalCents)} with PayPal.</span>
+          </li>
+          <li>
+            <CheckIcon size={22} /> <span>We asked PayPal to capture the payment once, using a single request ID so a retry can&apos;t charge twice.</span>
+          </li>
+          <li>
+            <CheckIcon size={22} />{" "}
+            <span>
+              PayPal reported the capture as {row.captureStatus === "COMPLETED" ? "completed" : String(row.captureStatus).toLowerCase()} for{" "}
+              {formatUsd(row.captureAmountCents ?? 0)} USD, matching your approval.
+            </span>
+          </li>
+        </ol>
+      </section>
       <Lines row={row} />
       <section className="card" aria-labelledby="ref-title">
         <h2 id="ref-title">Payment details</h2>
