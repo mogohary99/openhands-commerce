@@ -14,7 +14,7 @@ test.describe("LIVE PayPal Sandbox", () => {
     await reachApprovedQuote(page);
     const approve = page.locator("#approve-button");
     // Double click: both submissions must land on the same PayPal order.
-    await Promise.all([page.waitForURL(/sandbox\.paypal\.com/, { timeout: 45_000 }), approve.dblclick()]);
+    await Promise.all([page.waitForURL(/sandbox\.paypal\.com/, { timeout: 45_000, waitUntil: "commit" }), approve.dblclick()]);
     const token = new URL(page.url()).searchParams.get("token")!;
     expect(token).toMatch(/^[A-Z0-9]{10,40}$/);
     test.info().annotations.push({ type: "paypal-order", description: token });
@@ -29,7 +29,7 @@ test.describe("LIVE PayPal Sandbox", () => {
 
     // Approving again from the store reuses the same PayPal order.
     await page.goto("/review");
-    await Promise.all([page.waitForURL(/sandbox\.paypal\.com/, { timeout: 45_000 }), page.locator("#approve-button").click()]);
+    await Promise.all([page.waitForURL(/sandbox\.paypal\.com/, { timeout: 45_000, waitUntil: "commit" }), page.locator("#approve-button").click()]);
     expect(new URL(page.url()).searchParams.get("token")).toBe(token);
 
     // Shopper cancels at PayPal → back to the store, nothing charged, cart kept.
@@ -48,7 +48,7 @@ test.describe("LIVE PayPal Sandbox", () => {
     test.skip(!buyer.email || !buyer.password, "PAYPAL_SANDBOX_BUYER_EMAIL / PAYPAL_SANDBOX_BUYER_PASSWORD not set (sandbox personal account)");
     test.setTimeout(240_000);
     await reachApprovedQuote(page);
-    await Promise.all([page.waitForURL(/sandbox\.paypal\.com/, { timeout: 45_000 }), page.locator("#approve-button").click()]);
+    await Promise.all([page.waitForURL(/sandbox\.paypal\.com/, { timeout: 45_000, waitUntil: "commit" }), page.locator("#approve-button").click()]);
     const token = new URL(page.url()).searchParams.get("token")!;
 
     // PayPal's hosted sandbox login. Selectors are PayPal's, not ours.

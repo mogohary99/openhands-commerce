@@ -15,7 +15,7 @@ test("manual buyer approval at PayPal Sandbox → capture verified with PayPal",
   test.setTimeout(15 * 60_000);
 
   await reachApprovedQuote(page);
-  await Promise.all([page.waitForURL(/sandbox\.paypal\.com/, { timeout: 45_000 }), page.locator("#approve-button").click()]);
+  await Promise.all([page.waitForURL(/sandbox\.paypal\.com/, { timeout: 45_000, waitUntil: "commit" }), page.locator("#approve-button").click()]);
   const token = new URL(page.url()).searchParams.get("token")!;
   console.log(`\nPayPal Sandbox order ${token} created for $40.62 USD.\n` +
     "In the Chrome window: log in with the SANDBOX PERSONAL account (…@personal.example.com), then press Pay / Complete Purchase.\n" +
