@@ -45,3 +45,18 @@ test("a receipt is only shown to the session that owns it", async ({ page, conte
   await expect(p2.locator("body")).not.toContainText("FIXTURECAPTURE");
   await other.close();
 });
+
+test("receipt (COMPLETED, fixture) at 400% zoom equivalent and in forced colors: ids wrap, no horizontal scrolling", async ({ page, context }) => {
+  await searchByKeyboard(page);
+  const sid = (await context.cookies()).find((k) => k.name === "ohc_sid")!.value;
+  const id = seed(sid, "COMPLETED");
+  await page.setViewportSize({ width: 320, height: 256 });
+  for (const forcedColors of ["none", "active"] as const) {
+    await page.emulateMedia({ forcedColors });
+    await page.goto(`/receipt/${id}`);
+    await expect(page.locator("#receipt-title")).toBeFocused();
+    const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
+    expect(overflow, `horizontal overflow (forced colors ${forcedColors})`).toBeLessThanOrEqual(0);
+    await expect(page.locator("dt:has-text('PayPal capture ID') + dd")).toBeVisible();
+  }
+});
