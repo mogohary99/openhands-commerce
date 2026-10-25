@@ -1,0 +1,71 @@
+1
+00:00:00,000 --> 00:00:07,000
+This bundle has a Lightning cable,
+but my phone uses USB-C.
+
+2
+00:00:07,000 --> 00:00:13,000
+So the store refuses to take my money,
+and puts the fix right where I am.
+
+3
+00:00:13,000 --> 00:00:20,000
+OpenHands Commerce: an accessible shopping assistant
+that checks your order before PayPal opens.
+
+4
+00:00:20,000 --> 00:00:27,000
+I describe what I need in my own words,
+using only the keyboard.
+
+5
+00:00:27,000 --> 00:00:34,000
+Then I pick the bundle with the wrong cable,
+the mistake you'd only catch by reading closely.
+
+6
+00:00:34,000 --> 00:00:44,000
+Payment is blocked, the reason is shown,
+and the fix is the very next stop.
+
+7
+00:00:44,000 --> 00:00:54,000
+One key, same price, and the total,
+including shipping and tax, is checked against my budget.
+
+8
+00:00:54,000 --> 00:01:02,000
+Our server works out every price from the catalog
+and decides what's safe to buy.
+
+9
+00:01:02,000 --> 00:01:10,000
+AI can help word the explanations, but it has no tools and can't touch money.
+Today you're seeing our rule-based text, and the label says so.
+
+10
+00:01:10,000 --> 00:01:35,000
+[OWNER FOOTAGE: PayPal Sandbox login and Pay]
+PayPal creates an order bound to that exact quote.
+I confirm in PayPal Sandbox. It's test money only.
+
+11
+00:01:35,000 --> 00:01:55,000
+[OWNER FOOTAGE: verified receipt]
+We capture once, then ask PayPal directly. The receipt says paid only when
+PayPal reports it completed, for the amount I approved. Refreshing can't charge me twice.
+
+12
+00:01:55,000 --> 00:01:59,000
+If I cancel, it says nothing was charged
+and keeps my order.
+
+13
+00:01:59,000 --> 00:02:11,000
+It works in high-contrast mode, at 400 percent zoom,
+and with the keyboard alone.
+
+14
+00:02:11,000 --> 00:02:22,000
+OpenHands Commerce. The AI explains, the server decides,
+and you stay in control.
