@@ -1,4 +1,4 @@
-import { expect, type Page } from "@playwright/test";
+import { expect, test, type Page } from "@playwright/test";
 import { mkdirSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { uuidv5 } from "../../lib/ids";
@@ -8,20 +8,51 @@ import { uuidv5 } from "../../lib/ids";
 export const SANDBOX = "https://api-m.sandbox.paypal.com";
 export const EXPECTED = { value: "40.62", currency: "USD", shipping: "5.99", tax: "2.64" };
 
+// Test-side calls to PayPal retry ONLY transport failures (connect timeout, reset) and
+// 5xx/429, at most 3 attempts, and every retry is logged and attached to the test report,
+// so sandbox instability is visible rather than hidden. Safe by construction: the token
+// request and GETs change nothing, and a capture is retried with the SAME PayPal-Request-Id,
+// which PayPal de-duplicates, so a retry can never capture a second time. A 4xx is never
+// retried: it is PayPal's answer, and the assertions check it.
+const ATTEMPTS = 3;
+async function send(label: string, url: string, init: RequestInit) {
+  let last: unknown;
+  for (let attempt = 1; attempt <= ATTEMPTS; attempt++) {
+    try {
+      const r = await fetch(url, { ...init, signal: AbortSignal.timeout(20_000) });
+      if ((r.status < 500 && r.status !== 429) || attempt === ATTEMPTS) return r;
+      last = new Error(`HTTP ${r.status} debug_id=${r.headers.get("paypal-debug-id")}`);
+    } catch (err) {
+      last = err;
+      if (attempt === ATTEMPTS) throw err;
+    }
+    const why = last instanceof Error ? `${last.message}${last.cause instanceof Error ? ` (${last.cause.message})` : ""}` : String(last);
+    console.warn(`[paypal-sandbox] ${label}: attempt ${attempt} failed (${why}); retrying`);
+    try { test.info().annotations.push({ type: "paypal-network-retry", description: `${label}: ${why}` }); } catch { /* outside a test */ }
+    await new Promise((res) => setTimeout(res, 1000 * attempt));
+  }
+  throw last;
+}
+
+let cached: { value: string; expiresAt: number } | undefined;
 export async function paypalToken() {
+  if (cached && Date.now() < cached.expiresAt) return cached.value;
   const auth = Buffer.from(`${process.env.PAYPAL_CLIENT_ID}:${process.env.PAYPAL_CLIENT_SECRET}`).toString("base64");
-  const t = await fetch(`${SANDBOX}/v1/oauth2/token`, { method: "POST", headers: { Authorization: `Basic ${auth}`, "Content-Type": "application/x-www-form-urlencoded" }, body: "grant_type=client_credentials" });
-  return ((await t.json()) as { access_token: string }).access_token;
+  const t = await send("POST /v1/oauth2/token", `${SANDBOX}/v1/oauth2/token`, { method: "POST", headers: { Authorization: `Basic ${auth}`, "Content-Type": "application/x-www-form-urlencoded" }, body: "grant_type=client_credentials" });
+  const json = (await t.json()) as { access_token: string; expires_in: number };
+  cached = { value: json.access_token, expiresAt: Date.now() + Math.max(0, json.expires_in - 120) * 1000 };
+  return cached.value;
 }
 
 export async function paypalGetOrder(id: string) {
-  const r = await fetch(`${SANDBOX}/v2/checkout/orders/${id}`, { headers: { Authorization: `Bearer ${await paypalToken()}` } });
+  const r = await send(`GET order ${id}`, `${SANDBOX}/v2/checkout/orders/${id}`, { headers: { Authorization: `Bearer ${await paypalToken()}` } });
   return { status: r.status, body: (await r.json()) as any };
 }
 
 // A capture request straight to PayPal, bypassing our app, to prove PayPal itself refuses a second capture.
+// Any retry reuses `requestId`; a new id is never generated here.
 export async function paypalCapture(id: string, requestId: string) {
-  const r = await fetch(`${SANDBOX}/v2/checkout/orders/${id}/capture`, {
+  const r = await send(`POST capture ${id}`, `${SANDBOX}/v2/checkout/orders/${id}/capture`, {
     method: "POST",
     headers: { Authorization: `Bearer ${await paypalToken()}`, "Content-Type": "application/json", "PayPal-Request-Id": requestId },
   });

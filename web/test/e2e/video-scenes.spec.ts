@@ -82,7 +82,7 @@ test("scene 3: cancel at PayPal → nothing charged, order kept", async ({ page 
   await page.locator("#fix-0").click();
   await expect(page.locator("#fixed-panel")).toBeVisible();
   await pause(page, 1500);
-  await Promise.all([page.waitForURL(/sandbox\.paypal\.com/, { timeout: 45_000, waitUntil: "commit" }), page.locator("#approve-button").click()]);
+  await Promise.all([page.waitForURL(/sandbox\.paypal\.com/, { timeout: 60_000, waitUntil: "commit" }), page.locator("#approve-button").click()]);
   const cancel = page.getByRole("link", { name: /Cancel and return/ });
   await cancel.waitFor({ timeout: 45_000 });
   await pause(page, 2500);
