@@ -55,6 +55,23 @@ test("COMPLIANCE_VIOLATION: replaying the return URL afterwards still says refus
   assert.equal(deps.store.getOrder(orderId)!.statusReason, "COMPLIANCE_VIOLATION");
 });
 
+// Seen live later on 2026-10-25: a GET of those refused orders returns no order `status`, no
+// payer, and one capture with status DECLINED. If our record is CAPTURE_UNKNOWN (say the
+// capture response was lost), checking again must report PayPal's decline, not ask the
+// shopper to approve again, and must not send another capture.
+test("order GET with no status and a DECLINED capture → declined, never paid, no new capture", async () => {
+  const { orderId, ppId } = await approvedOrder();
+  deps.store.updateOrder(orderId, { state: "CAPTURE_UNKNOWN", statusReason: "UNREACHABLE" });
+  const o = paypal.orders.get(ppId)!;
+  delete (o as { status?: string }).status;
+  o.purchase_units![0]!.payments = { captures: [{ id: "CAP-declined", status: "DECLINED", amount: { ...o.purchase_units![0]!.amount! } }] } as never;
+  assert.equal((await reconcile(deps, orderId)).kind, "declined");
+  const row = deps.store.getOrder(orderId)!;
+  assert.equal(row.state, "DECLINED");
+  assert.equal(row.captureId, "CAP-declined");
+  assert.equal(paypal.calls.filter((c) => c.op === "capture").length, 0);
+});
+
 test("HTTP 500 on capture → CAPTURE_UNKNOWN (not FAILED); reconcile captures once with the same request id", async () => {
   const { orderId, ppId } = await approvedOrder();
   paypal.captureError = { status: 500, issue: "INTERNAL_SERVER_ERROR" };

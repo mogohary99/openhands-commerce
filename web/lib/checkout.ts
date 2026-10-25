@@ -159,6 +159,9 @@ async function captureRow(deps: CheckoutDeps, row: OrderRow): Promise<CaptureRes
   try {
     const current = await paypal.getOrder(row.paypalOrderId!);
     if (current.body.status === "COMPLETED") return finalize(deps, row, current.body, "already_completed");
+    // PayPal already recorded a capture attempt (seen live: no order status, one DECLINED capture).
+    // Report that outcome; never capture again or ask for a new approval on this order.
+    if (firstCapture(current.body)) return finalize(deps, row, current.body, "already_attempted");
     if (current.body.status !== "APPROVED") {
       store.updateOrder(row.id, { state: "PAYPAL_CREATED" });
       store.audit("capture.skipped_not_approved", ids, { paypalStatus: current.body.status });
