@@ -100,9 +100,9 @@ next.js · react · typescript · paypal-orders-api · paypal-webhooks · paypal
 ## Try it / testing instructions for judges
 
 - **Hosted demo:** **[URL — not deployed yet; needs owner approval]**. Free, no sign-up.
-- **PayPal Sandbox buyer (test money only):** email **[sandbox personal account email]** / password **[sandbox password]** — create a dedicated sandbox personal account for judges; never a real PayPal login.
+- **PayPal Sandbox buyer (test money only):** email **[judge sandbox personal account email]** / password **[its sandbox password]**. Create a dedicated sandbox *personal* account for judges with country **United States**: on 2026-10-25 two real approvals from an Egypt-country sandbox buyer were refused at capture with `COMPLIANCE_VIOLATION` (see `docs/qa-report.md`). This is a sandbox test login, not a real PayPal account and not a project secret. Re-check that it still logs in before Dec 1 and again during judging.
 - **Try:** under "Or try an example", press the first one ("My phone uses USB-C…") → in the first product choose "White + 1 m USB-C to Lightning cable" → Add to order → press Approve (blocked) → press the fix → Approve and pay $40.62 → log in with the sandbox buyer → receipt.
-- **Run locally:** `web/README.md` (Node 20.9+, `npm ci`, sandbox keys in `web/.env.local`, `npm run build && npm start`).
+- **Run locally:** `web/README.md` → "For judges" (Node 20.9+, `npm ci`, the judge-only sandbox app keys **[owner decision: published judge-only sandbox app keys, or 'create your own free sandbox app']** in `web/.env.local`, then `npm run build && npm start`). Never put the project's own sandbox keys here.
 
 ## Disclosures (keep these in the submission)
 

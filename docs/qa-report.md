@@ -8,8 +8,8 @@ Legend: **LIVE** = real call to PayPal Sandbox / Anthropic. **AUTO** = automated
 
 | Question | Answer |
 |---|---|
-| Did a real sandbox buyer approve a payment? | **No.** On 2026-10-25 `npm run purchase:manual` reached PayPal's login page for sandbox order `6E5462927B134152K` ($40.62) and waited 10 minutes; nobody logged in, so it timed out with nothing approved or charged (§3a). `PAYPAL_SANDBOX_BUYER_EMAIL`/`PASSWORD` are still empty in `web/.env.local` (rechecked 2026-10-24, file unchanged since Oct 23), and the PayPal developer dashboard requires the owner's Face ID / Touch ID login, which we do not bypass. A manual path that needs no stored password is ready: `npm run purchase:manual` (the owner logs in at PayPal; §3a). |
-| Does PayPal independently confirm a capture? | **No capture exists yet.** The buyer-flow test that asserts it via `GET /v2/checkout/orders/{id}` is written and **skipped**. |
+| Did a real sandbox buyer approve a payment? | **Yes, twice, but neither was captured.** On 2026-10-25 around 11:43 local, the owner logged in at PayPal Sandbox and approved orders `3EW601627R616202L` and `91U83791YC987840L` ($40.62 USD each). PayPal refused both captures with 422 `COMPLIANCE_VIOLATION`. PayPal's API shows both `APPROVED` with **0 captures**, payer country `EG` (§3b). **So no capture has been verified yet.** Earlier, unattended, on 2026-10-25: `npm run purchase:manual` reached PayPal's login page for sandbox order `6E5462927B134152K` ($40.62) and waited 10 minutes; nobody logged in, so it timed out with nothing approved or charged (§3a). `PAYPAL_SANDBOX_BUYER_EMAIL`/`PASSWORD` are still empty in `web/.env.local` (rechecked 2026-10-24, file unchanged since Oct 23), and the PayPal developer dashboard requires the owner's Face ID / Touch ID login, which we do not bypass. A manual path that needs no stored password is ready: `npm run purchase:manual` (the owner logs in at PayPal; §3a). |
+| Does PayPal independently confirm a capture? | **No capture exists yet.** PayPal confirmed that the two refused orders have 0 captures. The buyer-flow test that asserts it via `GET /v2/checkout/orders/{id}` is written and **skipped**. |
 | Was live Claude tested? | **No.** `ANTHROPIC_API_KEY` is not set; 7 live Claude tests (extraction, injection, mismatch and over-budget explanations, comparison intro, planted review, real timeout) skipped. Fallback paths were tested through the real SDK against a local fake server (AUTO). |
 | Was real assistive-technology testing performed? | **No.** No VoiceOver/NVDA/Voice Control/Switch Control session and no testing with disabled users. Chrome's accessibility tree was inspected automatically. |
 | Real money? | None possible: PayPal base URL hard-coded to sandbox; enforced by a unit test. |
@@ -26,6 +26,8 @@ Legend: **LIVE** = real call to PayPal Sandbox / Anthropic. **AUTO** = automated
 | `spikes: npm test` | 26 tests, 23 pass, 0 fail, 3 skipped (Claude key) |
 | `web: npm audit --omit=dev` | 0 vulnerabilities |
 | Secret in git history | 0 matches (all revisions) |
+
+**Latest full run (2026-10-25, after the COMPLIANCE_VIOLATION fix and the test-side retry change): exit 0.** Unit **83/83**. Live: 11 pass, 7 skipped (no Anthropic key). E2E: **46 tests, 39 pass, 0 fail, 7 skipped**, and no `[paypal-sandbox]` retries logged. Spikes: 23 pass, 3 skipped. Audit: 0 vulnerabilities. The table above is the earlier 2026-10-25 run with the sandbox connect timeout.
 
 Previous full run (2026-10-24, commit `a607df7`): exit 0. Unit 81/81, live 11 pass + 7 skipped, E2E 38 pass + 2 skipped.
 
@@ -49,7 +51,7 @@ Previous full run (2026-10-24, commit `a607df7`): exit 0. Unit 81/81, live 11 pa
 | Unit tests | **PASS** (81/81) |
 | Browser E2E | **PASS with one network failure** (2026-10-25: 38 pass, 1 fail = PayPal Sandbox connect timeout in a test's own verification call, which passed on a separate rerun; 7 skipped = buyer purchase, manual purchase, 5 video recordings). See §2 |
 | Flaky test | **FIXED** (root cause found; regression test fails 21/40 without the fix, passes 40/40 with it) |
-| Real sandbox buyer-approved capture | **BLOCKED**: needs the owner's login at PayPal Sandbox (`npm run purchase:manual`; the 2026-10-25 attempt timed out unattended) |
+| Real sandbox buyer-approved capture | **BLOCKED**: two real approvals on 2026-10-25 were refused by PayPal (`COMPLIANCE_VIOLATION`, 0 captures; §3b). Needs US sandbox accounts and a rerun |
 | PayPal-verified amount and currency of a capture | **BLOCKED** — same (test asserts `COMPLETED`, `USD`, `40.62`, one capture after refresh/replays/re-capture; written, not run) |
 | No known duplicate-charge vulnerability | **PASS (no known issue)** — AUTO + LIVE pre-approval evidence; post-capture replay against real PayPal is **BLOCKED** |
 | AI fallback when Claude fails | **PASS** (AUTO through the real SDK against a fake server) |
@@ -106,6 +108,43 @@ Earlier manual script order `946825133C0963026` was never approved; it timed out
 - **Second run:** it reached PayPal's login page for order `6E5462927B134152K`, created for $40.62 USD. It waited 10 minutes, nobody logged in (the owner was away), and it timed out.
   - Nothing was approved or captured, and no evidence file was written. Afterwards an independent `GET /v2/checkout/orders/6E5462927B134152K` returned `PAYER_ACTION_REQUIRED`, 40.62 USD, 0 captures.
   - **Status: BLOCKED on the owner's PayPal Sandbox login.**
+
+### 3b. Real buyer approvals refused at capture: COMPLIANCE_VIOLATION (2026-10-25)
+
+**What happened.** The owner ran `npm run purchase:manual`, logged in at PayPal Sandbox and approved.
+- PayPal returned to `/checkout/return` and our capture got **422 `COMPLIANCE_VIOLATION`**: order `3EW601627R616202L`, debug_id `f10081281d454`.
+- The owner approved again: order `91U83791YC987840L`, debug_id `f2506644ac6cd`, same 422.
+- A third order, `6VC28704AY408032J`, was created and the browser was then closed: `PAYER_ACTION_REQUIRED`, 0 captures.
+- The test ended with "Target page, context or browser has been closed". No evidence file was written, because nothing was captured.
+
+**Independent check with PayPal** (`GET /v2/checkout/orders/{id}`): both refused orders are `APPROVED`, 40.62 USD, **0 captures**, payer country **EG**. So the store's amount and currency reached PayPal correctly, and nothing was charged.
+
+**Likely cause: NOT VERIFIED.** It's on PayPal's side, tied to the sandbox accounts. PayPal returned a definitive 4xx, and our request matched what the order holds. I found no official PayPal documentation for this issue on capture. Forum reports point to the country of the sandbox buyer or merchant account. **Next step (owner):** create a sandbox personal *and* business account with country **United States**, and a sandbox REST app under that business account. Its new keys also complete the secret rotation. Then rerun `npm run purchase:manual`.
+
+**App defect found and fixed.** `COMPLIANCE_VIOLATION` wasn't a known refusal. It fell through to the generic notice "PayPal couldn't start the payment… Please try again in a moment". That was wrong: PayPal had started the payment, the buyer had approved it, and then PayPal refused it. It also invited a retry that fails the same way, which the owner then did.
+- **Now:** it maps to `refused` ("PayPal refused this payment. Nothing was charged. If you approve again, we'll start a new PayPal checkout."), also when the return URL is replayed later.
+- **Regression tests:** 2 new unit tests, which fail on the old code and pass with the fix.
+- Unknown 4xx issues still get the generic notice. Calling every unknown error a refusal would be misleading the other way.
+
+### 3c. PayPal Sandbox instability vs application failures (2026-10-25)
+
+| Time (local) | Observation | Attributed to |
+|---|---|---|
+| ~03:38 | Video take: the store showed "Opening PayPal…" for about 70 s, then PayPal's login page rendered **without its stylesheets** | PayPal Sandbox. Our page had already redirected, and the unstyled page is PayPal's |
+| ~03:45 | `live-paypal` test: our app created the order and redirected, then the **test's own** `POST /v1/oauth2/token` hit `ConnectTimeoutError` (10 s) | Network or PayPal. It failed before any request reached PayPal; `curl` right after took 2.9–7.9 s per call |
+| ~11:56 | `live-paypal.spec.ts --repeat-each=4`: **4/4 pass**, 10–15 s each (earlier runs: 31–39 s), no retries needed. `test:live`: 11 pass, 7 skipped | Sandbox healthy |
+| ~11:57 | Scene 3 re-recorded: PayPal rendered normally, 24 s take | Sandbox healthy |
+
+**Test-only hardening** (`test/e2e/paypal-verify.ts`):
+- The test's own PayPal calls now reuse one access token instead of requesting a new one per call.
+- They retry **only** on transport errors and 5xx/429, at most 3 attempts.
+- Each retry is logged as `[paypal-sandbox] … retrying` and attached to the report as a `paypal-network-retry` annotation, so instability stays visible.
+- A 4xx is never retried.
+- A test-side capture only retries with its **original** `PayPal-Request-Id`, which PayPal de-duplicates, so a retry can't capture twice. A fresh id is never generated on retry.
+- The tests' wait for the redirect to PayPal is now 60 s, up from 45. The app's own worst case is 3 attempts × 15 s plus backoff, about 46 s.
+- **No assertion was changed.** The app's PayPal client already retried safely (same request id, 15 s per attempt) and is unchanged.
+
+**One unexplained failure.** The scene 3 *recording* script (not a product test) failed once at 16 s, and its output was lost because the next run cleared `test-results/`. It then passed 4 times in a row. The cause is **unknown**.
 
 ## 4. Payment failure & security matrix
 

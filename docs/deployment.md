@@ -34,6 +34,42 @@ Blueprint: `render.yaml` at the repo root (`autoDeploy: false`). The disk pins t
 5. Webhook: developer.paypal.com → Apps & Credentials (Sandbox) → the app → **Add webhook** → URL `https://<host>/api/paypal/webhook` → events `CHECKOUT.ORDER.APPROVED`, `PAYMENT.CAPTURE.COMPLETED`, `PAYMENT.CAPTURE.PENDING`, `PAYMENT.CAPTURE.DENIED`, `PAYMENT.CAPTURE.REFUNDED`. Copy the **Webhook ID** into `PAYPAL_WEBHOOK_ID`, redeploy. Until then the endpoint answers 503 and the app relies on its own capture + `GET /v2/checkout/orders` verification (webhooks are a backstop, never the source of "paid").
 6. Smoke test on the hosted URL: signature flow → PayPal Sandbox login as the sandbox **personal** buyer → receipt → confirm the same capture id in the sandbox business account's activity.
 
+## Approval checklist (one decision, then I run the rest)
+
+**What you approve:** "Create a Render Starter web service plus a 1 GB disk for OpenHands Commerce, about $11 total until Dec 15, on my card."
+
+Before it can start, you need to:
+
+| # | Owner step | Why only you can do it |
+|---|---|---|
+| 1 | Create or sign in to a Render account, and add a card | Account authentication and billing |
+| 2 | Choose where the code comes from: approve a push to a **private** GitHub repo now (Render can deploy from a private repo through its GitHub app), or wait until the repo is made public | Pushing and publishing need your approval |
+| 3 | Give the Render GitHub app access to that one repo | Third-party OAuth permission |
+| 4 | Enter the secrets in Render → Environment: `PAYPAL_CLIENT_ID`, `PAYPAL_CLIENT_SECRET` (the **rotated** sandbox keys, from a US sandbox business account), and optionally `ANTHROPIC_API_KEY` | Secrets never pass through chat or the repo |
+| 5 | Create the sandbox webhook (step 5 below) and paste its ID into `PAYPAL_WEBHOOK_ID` | It's in the PayPal dashboard, behind your login |
+
+After approval, what I do or check:
+- Apply the blueprint.
+- Set `APP_BASE_URL` to the service URL.
+- Deploy manually (`autoDeploy: false`).
+- Check `/api/health`: `ok`, `database: ok`, `paypal: sandbox-configured`, `webhooks: configured`, `baseUrl: https`.
+- Check the HSTS and CSP headers.
+- Run the keyboard signature flow.
+- Cancel at PayPal: "Nothing was charged".
+- Your sandbox purchase on the hosted URL, verified with PayPal: one capture, 40.62 USD.
+- A webhook delivery shows in PayPal's webhook events with a 200, and is recorded once.
+- Run a restart and check that orders survive it (that's the disk).
+- Take a first `db:backup`.
+- Add the URL to Devpost.
+
+**Pre-checked locally, 2026-10-25.** I made a clean `git archive` copy and ran `NODE_ENV=production npm ci && npm run build`, as Render's build would.
+- Build: succeeded.
+- `npm start` with `PORT=3400`, a fresh `DATABASE_PATH` and an `https` `APP_BASE_URL`:
+  - `/api/health` returned 200: `database: ok`, `baseUrl: https`, `paypal: not-configured` (no keys given to the copy), `ai: rules-only`.
+  - The home page returned 200 with `Strict-Transport-Security` and the nonce CSP.
+  - The SQLite file was created in WAL mode at `DATABASE_PATH`.
+- **Still untested:** Render itself, its disk, its TLS and proxy, and webhook delivery.
+
 ## Backups and rollback
 
 - **Before every deploy and once a day until Dec 15:** run `npm run db:backup` from the Render shell (`cd web && DATABASE_PATH=/var/data/openhands.sqlite npm run db:backup -- /var/data/backup-$(date +%F).sqlite`). It makes a consistent online copy, runs `integrity_check` and prints the order count. Download a copy off the box now and then (Render shell → `cat` to your machine, or `scp` on a VPS). Render's automatic daily disk snapshots are a second layer.

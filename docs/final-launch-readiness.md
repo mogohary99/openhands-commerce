@@ -1,4 +1,6 @@
-# Final launch readiness: 2026-10-25
+# Final launch readiness: 2026-10-25 (updated after the owner's PayPal attempt)
+
+The current priority order is in `docs/release-checklist.md`.
 
 **Deadline:** Thu Nov 12, 2026, 12:00 pm PT. **Target:** submit Nov 10–11. **Demo must stay up until:** Dec 15, 2026, 8:00 am PT.
 
@@ -44,10 +46,10 @@ Everything below was done locally. Nothing has been pushed, deployed, subscribed
 
 ## 3. Real PayPal payment
 
-**BLOCKED.** It needs your login at PayPal Sandbox. Everything up to the login page has been run for real. The checks after capture are all written but have not run:
-- `COMPLETED`, 40.62 USD, exactly one capture;
-- reload and replay of the return URL;
-- re-capture with the same request id and with a fresh one.
+**BLOCKED.**
+- **What happened:** on 2026-10-25 the owner approved twice as a real sandbox buyer. PayPal refused both captures with `COMPLIANCE_VIOLATION`. PayPal shows 0 captures, and the payer country was EG.
+- **Fixed:** the store now says "PayPal refused this payment. Nothing was charged." It used to say "try again in a moment".
+- **Next:** US sandbox accounts and a new app, then rerun. See `qa-report.md` §3b and `docs/release-checklist.md` P1.
 
 ## 4. Real Claude API
 
@@ -104,7 +106,7 @@ The claims audit was done on 2026-10-24 (`docs/unattended-mission-report.md`), a
 
 ## 9. Remaining owner actions
 
-1. **Pay in PayPal Sandbox.** Log in with the sandbox personal account and press Pay. Record the screen while you do (⌘⇧5), for the video.
+1. **Pay in PayPal Sandbox again, with US sandbox accounts.** Create US personal and business accounts and an app under the business account. Then run `purchase:manual` while recording the screen (⌘⇧5).
 2. **Anthropic key:** add `ANTHROPIC_API_KEY`, or choose rules-only.
 3. **Approve hosting:** Render, about $11, on your card.
 4. **Rotate the PayPal sandbox secret.** It's in a chat transcript. You need to log in to the PayPal dashboard (Face ID/Touch ID), then update both `.env.local` files.
