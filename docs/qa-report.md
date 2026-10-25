@@ -1,6 +1,6 @@
 # Technical QA Report — OpenHands Commerce MVP
 
-_Run dates: 2026-10-23, updated 2026-10-24 (local, macOS 26.2, Node 20.20.2, Chrome via Playwright 1.64.1). Latest results are for commit `a607df7` (2026-10-24)._
+_Run dates: 2026-10-23, updated 2026-10-24 and 2026-10-25 (local, macOS 26.2, Node 20.20.2, Chrome via Playwright 1.64.1). Latest results are from 2026-10-25 (§2, working tree after `eefc5a8`)._
 
 Legend: **LIVE** = real call to PayPal Sandbox / Anthropic. **AUTO** = automated, no external service. **MANUAL** = performed by a person. **NOT RUN** = not executed (reason given).
 
@@ -8,13 +8,13 @@ Legend: **LIVE** = real call to PayPal Sandbox / Anthropic. **AUTO** = automated
 
 | Question | Answer |
 |---|---|
-| Did a real sandbox buyer approve a payment? | **No.** `PAYPAL_SANDBOX_BUYER_EMAIL`/`PASSWORD` are still empty in `web/.env.local` (rechecked 2026-10-24, file unchanged since Oct 23), and the PayPal developer dashboard requires the owner's Face ID / Touch ID login, which we do not bypass. A manual path that needs no stored password is ready: `npm run purchase:manual` (the owner logs in at PayPal; §3a). |
+| Did a real sandbox buyer approve a payment? | **No.** On 2026-10-25 `npm run purchase:manual` reached PayPal's login page for sandbox order `6E5462927B134152K` ($40.62) and waited 10 minutes; nobody logged in, so it timed out with nothing approved or charged (§3a). `PAYPAL_SANDBOX_BUYER_EMAIL`/`PASSWORD` are still empty in `web/.env.local` (rechecked 2026-10-24, file unchanged since Oct 23), and the PayPal developer dashboard requires the owner's Face ID / Touch ID login, which we do not bypass. A manual path that needs no stored password is ready: `npm run purchase:manual` (the owner logs in at PayPal; §3a). |
 | Does PayPal independently confirm a capture? | **No capture exists yet.** The buyer-flow test that asserts it via `GET /v2/checkout/orders/{id}` is written and **skipped**. |
 | Was live Claude tested? | **No.** `ANTHROPIC_API_KEY` is not set; 7 live Claude tests (extraction, injection, mismatch and over-budget explanations, comparison intro, planted review, real timeout) skipped. Fallback paths were tested through the real SDK against a local fake server (AUTO). |
 | Was real assistive-technology testing performed? | **No.** No VoiceOver/NVDA/Voice Control/Switch Control session and no testing with disabled users. Chrome's accessibility tree was inspected automatically. |
 | Real money? | None possible: PayPal base URL hard-coded to sandbox; enforced by a unit test. |
 
-## 2. Commands and exact results (2026-10-24, final `npm run test:all`, exit 0)
+## 2. Commands and exact results (2026-10-25, `npm run test:all`, exit 1: see the E2E row)
 
 | Command | Result |
 |---|---|
@@ -22,10 +22,12 @@ Legend: **LIVE** = real call to PayPal Sandbox / Anthropic. **AUTO** = automated
 | `web: npm test` (AUTO unit) | **81 tests, 81 pass, 0 fail, 0 skipped** |
 | `web: npm run test:live` (LIVE) | **18 tests, 11 pass, 0 fail, 7 skipped** (Claude: `ANTHROPIC_API_KEY not set`) |
 | `web: npm run build` | ok |
-| `web: npm run test:e2e` (AUTO + LIVE) | **40 tests, 38 pass, 0 fail, 2 skipped** (buyer purchase: buyer credentials not set; manual purchase: runs only via `npm run purchase:manual`) |
+| `web: npm run test:e2e` (AUTO + LIVE) | **46 tests, 38 pass, 1 fail, 7 skipped**. Skipped: buyer purchase (no buyer credentials), manual purchase (`purchase:manual` only), 5 video-scene recordings (`video:scenes` only). **The failure:** `live-paypal` "approve creates one real sandbox order…". The app created the PayPal order, but the test's own independent `POST /v1/oauth2/token` to `api-m.sandbox.paypal.com` hit `ConnectTimeoutError` (10 s, addresses 104.17.170.30/171.30). That is a network failure in the test's verification call, not an app assertion. Straight afterwards `curl` reached the API (connect 0.08–0.15 s, responses 2.9–7.9 s), and a separate rerun of `live-paypal.spec.ts` passed (1 pass, 1 skipped). **This is recorded as a failure, not as fixed.** Nothing was changed to make it pass, and nothing in our code was found at fault. A test that depends on PayPal Sandbox can still fail like this. |
 | `spikes: npm test` | 26 tests, 23 pass, 0 fail, 3 skipped (Claude key) |
 | `web: npm audit --omit=dev` | 0 vulnerabilities |
-| Secret in git history | 0 matches (`git log -p --all`, all revisions) |
+| Secret in git history | 0 matches (all revisions) |
+
+Previous full run (2026-10-24, commit `a607df7`): exit 0. Unit 81/81, live 11 pass + 7 skipped, E2E 38 pass + 2 skipped.
 
 ### Flaky test: root cause found and fixed (2026-10-24)
 
@@ -45,22 +47,22 @@ Legend: **LIVE** = real call to PayPal Sandbox / Anthropic. **AUTO** = automated
 | TypeScript clean | **PASS** |
 | Production build | **PASS** |
 | Unit tests | **PASS** (81/81) |
-| Browser E2E | **PASS** (38/38 run; 2 skipped = buyer purchase, manual purchase) |
+| Browser E2E | **PASS with one network failure** (2026-10-25: 38 pass, 1 fail = PayPal Sandbox connect timeout in a test's own verification call, which passed on a separate rerun; 7 skipped = buyer purchase, manual purchase, 5 video recordings). See §2 |
 | Flaky test | **FIXED** (root cause found; regression test fails 21/40 without the fix, passes 40/40 with it) |
-| Real sandbox buyer-approved capture | **BLOCKED** — buyer credentials not provided |
+| Real sandbox buyer-approved capture | **BLOCKED**: needs the owner's login at PayPal Sandbox (`npm run purchase:manual`; the 2026-10-25 attempt timed out unattended) |
 | PayPal-verified amount and currency of a capture | **BLOCKED** — same (test asserts `COMPLETED`, `USD`, `40.62`, one capture after refresh/replays/re-capture; written, not run) |
 | No known duplicate-charge vulnerability | **PASS (no known issue)** — AUTO + LIVE pre-approval evidence; post-capture replay against real PayPal is **BLOCKED** |
 | AI fallback when Claude fails | **PASS** (AUTO through the real SDK against a fake server) |
 | Live Claude | **NOT TESTED** — no `ANTHROPIC_API_KEY` |
 | Accessible keyboard journey | **PASS** (AUTO) |
 | Screen-reader evaluation | **NOT TESTED** (manual VoiceOver/NVDA pass not done; prioritized checklist ready: `docs/accessibility/voiceover-checklist.md`) |
-| Receipt page accessibility | **PASS (fixture states)**: axe light/dark, focus and title for COMPLETED, PENDING, CAPTURE_UNKNOWN, FAILED from local fixture rows; a receipt from a real capture is **NOT TESTED** |
+| Receipt page accessibility | **PASS (fixture states)**: axe light/dark, focus and title for COMPLETED, PENDING, CAPTURE_UNKNOWN, FAILED from local fixture rows, plus no horizontal scrolling at the 400 % zoom equivalent with and without forced colours; a receipt from a real capture is **NOT TESTED** |
 | CSRF on Server Actions | **PASS**: forged-origin post refused, same-origin post works (E2E) |
 | Testing with disabled users | **NOT TESTED** |
 | No exposed credentials in repo | **PASS** (secret still needs rotation: it's in one chat transcript) |
 | No open critical/high security defects | **PASS (none known)** |
 | Hosted deployment | **NOT TESTED**: prepared (`render.yaml`, options compared in `docs/deployment.md`), not deployed (needs approval and a card) |
-| Demo video recorded | **NOT DONE** — script ready |
+| Demo video recorded | **NOT DONE**. Real silent footage of the scenes without a payment is recorded (`npm run video:scenes`, then `video:assemble`). The PayPal login, payment and receipt scenes, the narration and the captions are missing |
 | Devpost submission | **DRAFT** — `docs/submission/devpost.md` |
 
 ## 3. Live PayPal Sandbox evidence
@@ -90,13 +92,20 @@ All against `api-m.sandbox.paypal.com` with the project's sandbox REST app. Fail
 Earlier manual script order `946825133C0963026` was never approved; it timed out at `CREATED`; nothing captured.
 
 
-### 3a. Manual buyer purchase (prepared, NOT RUN)
+### 3a. Manual buyer purchase (prepared, attempted 2026-10-25, NOT COMPLETED)
 
 `cd web && npm run build && npm run purchase:manual` opens Chrome on a temporary profile and drives the store to PayPal Sandbox. It then waits up to 10 minutes while the owner logs in with the sandbox **personal** account and pays. No buyer credentials are read or stored. After the redirect it runs the same verification as the automated buyer test (`test/e2e/paypal-verify.ts`):
 - PayPal reports the order `COMPLETED`: 40.62 USD, with 5.99 shipping and 2.64 tax, `custom_id` present, exactly one capture, that capture `COMPLETED` for 40.62 USD with the same id the receipt shows.
 - Reloading the receipt and replaying the return URL, with and without PayerID, leave the receipt unchanged. The cart is closed.
 - A direct re-capture with the app's request id returns the same capture. With a fresh request id PayPal answers 422 `ORDER_ALREADY_CAPTURED`. Afterwards there is still exactly one capture.
 - Evidence (ids and statuses only) goes to `docs/evidence/sandbox-purchase-manual-buyer.json`.
+
+**2026-10-25 attempt.**
+- **First run:** our app created the PayPal order and redirected to PayPal's login page. The script still failed, because it waited for PayPal's checkout page to fire `load`, and that page never does. This was a bug in the script, not the app.
+  - **Fix:** the redirect wait now uses `waitUntil: "commit"`. The URL is still asserted. The same change was made to the three other PayPal redirect waits in `live-paypal.spec.ts`.
+- **Second run:** it reached PayPal's login page for order `6E5462927B134152K`, created for $40.62 USD. It waited 10 minutes, nobody logged in (the owner was away), and it timed out.
+  - Nothing was approved or captured, and no evidence file was written. Afterwards an independent `GET /v2/checkout/orders/6E5462927B134152K` returned `PAYER_ACTION_REQUIRED`, 40.62 USD, 0 captures.
+  - **Status: BLOCKED on the owner's PayPal Sandbox login.**
 
 ## 4. Payment failure & security matrix
 
