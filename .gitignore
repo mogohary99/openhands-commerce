@@ -4,3 +4,6 @@ node_modules/
 .next/
 *.log
 .DS_Store
+
+# raw video footage (regenerate with npm run video:scenes)
+docs/video/scenes/

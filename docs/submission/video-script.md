@@ -33,3 +33,21 @@ Rules (verified 2026-10-24): under 3 minutes, public on YouTube, must show the *
 ## Captions / transcript
 
 Write captions from the narration above (edit to match the actual take). Put the final transcript in `docs/submission/video-transcript.md`. Describe visual-only moments in the narration (the overlay diagram, the receipt) so the video itself works without sight.
+
+## Recorded footage (2026-10-25)
+
+`cd web && npm run build && npm run video:scenes && npm run video:assemble` records real, silent, keyboard-driven takes of the running app into `docs/video/scenes/`. That folder is git-ignored; rerun the command to recreate it.
+
+| File | Use for | Length |
+|---|---|---|
+| `2-cold-open-blocked.mp4` | 0:00–0:12 cold open (the problem panel, focused) | 18 s |
+| `1-signature-moment.mp4` | 0:20–1:30: request, options, wrong cable, blocked Approve, one-key fix, $40.62. Stops before PayPal | 35 s, trim to the cues |
+| `3-cancel-nothing-charged.mp4` | 2:25 montage: cancel at PayPal Sandbox's login page, then "Nothing was charged" | 84 s, mostly PayPal loading; trim to about 3 s |
+| `4-forced-colours.mp4` | 2:25 montage: high contrast | 16 s |
+| `5-zoom-400.mp4` | 2:25 montage: 400 % zoom (four full-resolution stills of real steps) | 14 s |
+
+**Still missing, and it must not be staged:**
+- **1:45–2:25:** the PayPal Sandbox login, Pay, and the receipt. These need the owner's real sandbox purchase, recorded on screen during `npm run purchase:manual` (⌘⇧5).
+- The VoiceOver audio for the cold open, if used. It must be real.
+- The narration and captions. No synthetic voice has been added.
+- The 1:30 overlay diagram.

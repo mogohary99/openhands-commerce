@@ -17,7 +17,9 @@
     "test:all": "npm run typecheck && npm test && npm run test:live && npm run build && npm run test:e2e",
     "test:live": "node --env-file-if-exists=.env.local --conditions=react-server --import tsx --test test/live/*.test.ts",
     "purchase:manual": "MANUAL_PURCHASE=1 node --env-file-if-exists=.env.local ./node_modules/.bin/playwright test manual-purchase.spec.ts --headed --reporter=list",
-    "db:backup": "node scripts/backup-db.mjs"
+    "db:backup": "node scripts/backup-db.mjs",
+    "video:scenes": "RECORD_SCENES=1 node --env-file-if-exists=.env.local ./node_modules/.bin/playwright test video-scenes.spec.ts --reporter=list",
+    "video:assemble": "sh scripts/assemble-scenes.sh"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "1.1.0",
