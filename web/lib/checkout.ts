@@ -202,6 +202,7 @@ async function captureRow(deps: CheckoutDeps, row: OrderRow): Promise<CaptureRes
       switch (err.issue) {
         case "TRANSACTION_REFUSED":
         case "MAX_NUMBER_OF_PAYMENT_ATTEMPTS_EXCEEDED":
+        case "COMPLIANCE_VIOLATION": // seen live 2026-10-25 after a real sandbox buyer approval
           store.updateOrder(row.id, { state: "FAILED", statusReason: err.issue, debugId: err.debugId });
           return { kind: "refused", orderId: row.id };
         case "INVALID_RESOURCE_ID":
@@ -271,6 +272,9 @@ function finalize(deps: CheckoutDeps, row: OrderRow, order: PayPalOrder, how: st
   }
 }
 
+// PayPal declined to move money after approval: nothing was captured, and a new approval starts a new order.
+const REFUSED_ISSUES = new Set(["TRANSACTION_REFUSED", "MAX_NUMBER_OF_PAYMENT_ATTEMPTS_EXCEEDED", "COMPLIANCE_VIOLATION"]);
+
 function stateResult(row: OrderRow): CaptureResult {
   switch (row.state) {
     case "COMPLETED":
@@ -285,6 +289,9 @@ function stateResult(row: OrderRow): CaptureResult {
       return { kind: "declined", orderId: row.id, retryUrl: row.approveUrl };
     case "NEEDS_REAPPROVAL":
       return { kind: "needs_reapproval", orderId: row.id };
+    case "FAILED":
+      if (row.statusReason && REFUSED_ISSUES.has(row.statusReason)) return { kind: "refused", orderId: row.id };
+      return { kind: "error", orderId: row.id, reason: row.statusReason ?? row.state };
     default:
       return { kind: "error", orderId: row.id, reason: row.statusReason ?? row.state };
   }

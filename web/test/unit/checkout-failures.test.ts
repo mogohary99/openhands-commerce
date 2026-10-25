@@ -29,7 +29,7 @@ async function approvedOrder() {
   return { orderId: r.orderId, ppId };
 }
 
-for (const issue of ["TRANSACTION_REFUSED", "MAX_NUMBER_OF_PAYMENT_ATTEMPTS_EXCEEDED"]) {
+for (const issue of ["TRANSACTION_REFUSED", "MAX_NUMBER_OF_PAYMENT_ATTEMPTS_EXCEEDED", "COMPLIANCE_VIOLATION"]) {
   test(`${issue} (422) → refused, nothing paid, next approval starts a new PayPal order`, async () => {
     const { orderId, ppId } = await approvedOrder();
     paypal.captureError = { status: 422, issue };
@@ -41,6 +41,19 @@ for (const issue of ["TRANSACTION_REFUSED", "MAX_NUMBER_OF_PAYMENT_ATTEMPTS_EXCE
     assert.equal(paypal.orders.size, 2);
   });
 }
+
+// Seen live on 2026-10-25: a real sandbox buyer approved, and capture returned 422
+// COMPLIANCE_VIOLATION (orders 3EW601627R616202L, 91U83791YC987840L; PayPal shows 0 captures).
+// It used to fall through to the generic "PayPal couldn't start the payment… try again" notice.
+test("COMPLIANCE_VIOLATION: replaying the return URL afterwards still says refused, and captures nothing more", async () => {
+  const { orderId, ppId } = await approvedOrder();
+  paypal.captureError = { status: 422, issue: "COMPLIANCE_VIOLATION" };
+  assert.equal((await completePayment(deps, SID, ppId)).kind, "refused");
+  const captures = paypal.calls.filter((c) => c.op === "capture").length;
+  assert.equal((await completePayment(deps, SID, ppId)).kind, "refused");
+  assert.equal(paypal.calls.filter((c) => c.op === "capture").length, captures);
+  assert.equal(deps.store.getOrder(orderId)!.statusReason, "COMPLIANCE_VIOLATION");
+});
 
 test("HTTP 500 on capture → CAPTURE_UNKNOWN (not FAILED); reconcile captures once with the same request id", async () => {
   const { orderId, ppId } = await approvedOrder();
