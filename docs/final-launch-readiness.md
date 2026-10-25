@@ -49,6 +49,9 @@ Everything below was done locally. Nothing has been pushed, deployed, subscribed
 **BLOCKED.**
 - **What happened:** on 2026-10-25 the owner approved twice as a real sandbox buyer. PayPal refused both captures with `COMPLIANCE_VIOLATION`. PayPal shows 0 captures, and the payer country was EG.
 - **Fixed:** the store now says "PayPal refused this payment. Nothing was charged." It used to say "try again in a moment".
+- **Follow-up GET (later the same day):** each order now holds one **DECLINED** capture, and the order status field is gone. Nothing was charged. Evidence: `docs/evidence/sandbox-compliance-violation-2026-10-25.json`. A draft support request is in `docs/paypal-support-request.md` (not sent).
+- **Second fix:** "Check again" now records PayPal's existing capture outcome. It used to ask for a re-approval. One new test covers it.
+- **US sandbox hypothesis: NOT TESTED.** Creating the accounts needs the owner's dashboard login, and the Chrome extension wasn't connected.
 - **Next:** US sandbox accounts and a new app, then rerun. See `qa-report.md` §3b and `docs/release-checklist.md` P1.
 
 ## 4. Real Claude API

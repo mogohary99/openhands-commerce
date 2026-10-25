@@ -27,7 +27,7 @@ Legend: **LIVE** = real call to PayPal Sandbox / Anthropic. **AUTO** = automated
 | `web: npm audit --omit=dev` | 0 vulnerabilities |
 | Secret in git history | 0 matches (all revisions) |
 
-**Latest full run (2026-10-25, after the COMPLIANCE_VIOLATION fix and the test-side retry change): exit 0.** Unit **83/83**. Live: 11 pass, 7 skipped (no Anthropic key). E2E: **46 tests, 39 pass, 0 fail, 7 skipped**, and no `[paypal-sandbox]` retries logged. Spikes: 23 pass, 3 skipped. Audit: 0 vulnerabilities. The table above is the earlier 2026-10-25 run with the sandbox connect timeout.
+**Latest full run (2026-10-25, after the COMPLIANCE_VIOLATION fix and the test-side retry change): exit 0.** Unit **83/83** (84/84 after the DECLINED-capture fix, see §3b). Live: 11 pass, 7 skipped (no Anthropic key). E2E: **46 tests, 39 pass, 0 fail, 7 skipped**, and no `[paypal-sandbox]` retries logged. Spikes: 23 pass, 3 skipped. Audit: 0 vulnerabilities. The table above is the earlier 2026-10-25 run with the sandbox connect timeout.
 
 Previous full run (2026-10-24, commit `a607df7`): exit 0. Unit 81/81, live 11 pass + 7 skipped, E2E 38 pass + 2 skipped.
 
@@ -119,12 +119,25 @@ Earlier manual script order `946825133C0963026` was never approved; it timed out
 
 **Independent check with PayPal** (`GET /v2/checkout/orders/{id}`): both refused orders are `APPROVED`, 40.62 USD, **0 captures**, payer country **EG**. So the store's amount and currency reached PayPal correctly, and nothing was charged.
 
-**Likely cause: NOT VERIFIED.** It's on PayPal's side, tied to the sandbox accounts. PayPal returned a definitive 4xx, and our request matched what the order holds. I found no official PayPal documentation for this issue on capture. Forum reports point to the country of the sandbox buyer or merchant account. **Next step (owner):** create a sandbox personal *and* business account with country **United States**, and a sandbox REST app under that business account. Its new keys also complete the secret rotation. Then rerun `npm run purchase:manual`.
+**Likely cause: NOT VERIFIED.** It's on PayPal's side, tied to the sandbox accounts. PayPal returned a definitive 4xx, and our request matched what the order holds. PayPal's official Orders v2 error reference lists `COMPLIANCE_VIOLATION` ("Transaction is declined due to compliance violation"), under create order, with no recommended action. It doesn't explain the cause. Forum reports point to the country of the sandbox buyer or merchant account. **Next step (owner):** create a sandbox personal *and* business account with country **United States**, and a sandbox REST app under that business account. Its new keys also complete the secret rotation. Then rerun `npm run purchase:manual`.
 
 **App defect found and fixed.** `COMPLIANCE_VIOLATION` wasn't a known refusal. It fell through to the generic notice "PayPal couldn't start the payment… Please try again in a moment". That was wrong: PayPal had started the payment, the buyer had approved it, and then PayPal refused it. It also invited a retry that fails the same way, which the owner then did.
 - **Now:** it maps to `refused` ("PayPal refused this payment. Nothing was charged. If you approve again, we'll start a new PayPal checkout."), also when the return URL is replayed later.
 - **Regression tests:** 2 new unit tests, which fail on the old code and pass with the fix.
 - Unknown 4xx issues still get the generic notice. Calling every unknown error a refusal would be misleading the other way.
+
+**Follow-up GET, the afternoon of 2026-10-25 (read-only, no capture retried).**
+- **The same two orders now look different:** the order-level `status` and `payer` fields are absent, and each order holds one capture with status **DECLINED**: `6MH62755AL443325D` and `7BL936621B999000C`, 40.62 USD.
+- **The third order** returns 404, because it was never approved.
+- **Money:** no capture is `COMPLETED`, so nothing was charged.
+- **Evidence:** sanitized in `docs/evidence/sandbox-compliance-violation-2026-10-25.json`. It has no ids of people or accounts, no emails and no credentials.
+- **Support request:** a draft is in `docs/paypal-support-request.md`. It has not been sent.
+
+**Second app gap found and fixed.** Suppose our record were `CAPTURE_UNKNOWN`, for example because the capture response was lost. "Check again" would read this shape and see an order that isn't `APPROVED`. It would then reset the order to "approve again at PayPal".
+- **Now:** if PayPal's order already holds a capture, we record that capture's outcome. Here that's `declined`, never paid, and no second capture is sent.
+- **Regression test:** 1 new unit test, which fails on the old code (`not_approved`) and passes with the fix.
+
+**US sandbox hypothesis: NOT TESTED.** Creating the US sandbox accounts and the app needs the PayPal Developer dashboard. The Chrome extension wasn't connected, and that dashboard needs the owner's login.
 
 ### 3c. PayPal Sandbox instability vs application failures (2026-10-25)
 

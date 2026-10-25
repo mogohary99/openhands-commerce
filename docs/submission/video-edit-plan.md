@@ -29,6 +29,14 @@ Default narration is **rules-only**, which matches what the app shows today ("Fr
 - **The business sandbox account view of the capture.** It needs your dashboard login; it's optional.
 - **The first take of scene 3.** It was unusable: on 2026-10-25 around 03:38 local time, PayPal Sandbox took about 70 s to paint, and its login page appeared without styling. It was re-recorded at 11:57 local, when Sandbox was fast. The new take is 24 s, and PayPal's page renders normally.
 
+## Silent rough cut
+
+Build it with `cd web && npm run video:roughcut`. It writes `docs/video/scenes/rough-cut.mp4` (git-ignored), assembled from the real scenes on this timeline.
+- **TO MAKE rows** are plain "DRAFT CARD" slates.
+- **OWNER rows** are grey slates headed "PLACEHOLDER: NOT FINAL FOOTAGE".
+
+Use it to check pacing and to time the narration. **Never upload it.** Replace both slate types in the editor.
+
 ## Recording the OWNER footage
 
 1. Run `cd web && npm run build && npm run purchase:manual`.

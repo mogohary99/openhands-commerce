@@ -14,6 +14,7 @@
 - [ ] `cd web && npm run build && npm run test:live`: the PayPal tests pass with the new keys.
 - [ ] **Owner:** start a screen recording (⌘⇧5), run `npm run purchase:manual`, log in as the US personal account and press Pay.
 - [ ] **Evidence:** `docs/evidence/sandbox-purchase-manual-buyer.json` shows `COMPLETED`, 40.62 USD, `capturesAfterReplays: 1`, a same-id replay returning the same capture, and a fresh id getting 422 `ORDER_ALREADY_CAPTURED`.
+- [ ] If capture fails again: don't retry that order. Fill in the merchant ID in `docs/paypal-support-request.md`, add the new debug_id, and send it (owner).
 - [ ] I copy the order and capture ids into `qa-report.md` §1/§3a and into devpost.md.
 
 ## P2: live AI, or an explicit rules-only decision

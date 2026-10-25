@@ -1,0 +1,29 @@
+{
+  "note": "PayPal Sandbox only, test money. Sanitized: no credentials, tokens, emails, names, addresses, merchant or payer ids. Captured by read-only GETs; no capture was retried.",
+  "environment": "https://api-m.sandbox.paypal.com (Orders v2)",
+  "capture_attempts": [
+    { "order_id": "3EW601627R616202L", "time_utc": "2026-10-25T08:44:06Z", "http": 422, "issue": "COMPLIANCE_VIOLATION", "debug_id": "f10081281d454" },
+    { "order_id": "91U83791YC987840L", "time_utc": "2026-10-25T08:44:29Z", "http": 422, "issue": "COMPLIANCE_VIOLATION", "debug_id": "f2506644ac6cd" }
+  ],
+  "first_followup_get": {
+    "time": "2026-10-25 shortly after the attempts",
+    "both_orders": { "status": "APPROVED", "amount": "40.62 USD", "captures": 0, "payer_country_code": "EG" }
+  },
+  "second_followup_get": {
+    "time": "2026-10-25 afternoon (local)",
+    "orders": [
+      { "order_id": "3EW601627R616202L", "get_debug_id": "f6212136712fb", "order_status": "(field absent)", "payer": "(field absent)",
+        "amount": "40.62 USD", "breakdown": { "item_total": "31.99", "shipping": "5.99", "tax_total": "2.64" },
+        "captures": [ { "id": "6MH62755AL443325D", "status": "DECLINED", "amount": "40.62 USD", "final_capture": true, "capture_get_debug_id": "f4013285c9f85" } ] },
+      { "order_id": "91U83791YC987840L", "get_debug_id": "f970466eecb5b", "order_status": "(field absent)", "payer": "(field absent)",
+        "amount": "40.62 USD", "breakdown": { "item_total": "31.99", "shipping": "5.99", "tax_total": "2.64" },
+        "captures": [ { "id": "7BL936621B999000C", "status": "DECLINED", "amount": "40.62 USD", "final_capture": true, "capture_get_debug_id": "f58002999f6b2" } ] }
+    ],
+    "third_order": { "order_id": "6VC28704AY408032J", "last_known": "PAYER_ACTION_REQUIRED (never approved)", "get_http": 404, "get_debug_id": "f966895f51b6f" }
+  },
+  "order_config": { "intent": "CAPTURE", "currency": "USD", "disbursement_mode": "INSTANT", "soft_descriptor": "PAYPAL *TEST STORE",
+    "invoice_id": "same on both orders by design (one per cart; prevents paying twice)", "custom_id": "quote hash" },
+  "money_moved": "none: no capture is COMPLETED",
+  "official_doc": "https://developer.paypal.com/api/rest/reference/orders/v2/errors/ : COMPLIANCE_VIOLATION, 'Transaction is declined due to compliance violation.' No recommended action listed.",
+  "cause": "NOT VERIFIED. Hypothesis: sandbox account country (payer EG). Untested: US sandbox accounts not yet created."
+}
