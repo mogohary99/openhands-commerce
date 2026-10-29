@@ -32,6 +32,16 @@ Legend: **LIVE** = real call to PayPal Sandbox / Anthropic. **AUTO** = automated
 | `web: npm audit --omit=dev` | 0 vulnerabilities |
 | Secret in git history | 0 matches (all revisions) |
 
+**Final QA gates, 2026-10-29 (commit after `7a544d8`, new sandbox app plus live Claude): all exit 0.**
+- `npm run test:all`: typecheck clean, build ok, unit **85/85**, live **18/18** (11 PayPal + 7 Claude), browser **40 pass, 0 fail, 7 skipped**.
+- `E2E_LIVE_AI=1 npm run test:e2e`: **40 pass, 7 skipped**.
+- Spikes **26/26**. `npm audit --omit=dev`: 0 vulnerabilities. Secret scan of the Anthropic key and both PayPal apps' keys, across all files and history: 0 hits.
+- **Clean `git archive` copy built as Render builds it** (`NODE_ENV=production npm ci && npm run build`), with an `https` `APP_BASE_URL`: health `ok` / `database: ok` / `paypal: sandbox-configured` / `ai: claude-configured` / `baseUrl: https`, HSTS and nonce CSP present, SQLite in WAL mode.
+- **The 7 skipped browser tests:**
+  - the automated buyer purchase: no stored buyer password, by design;
+  - `purchase:manual`: owner only;
+  - 5 video-scene recordings: run only on demand.
+
 **Full run 2026-10-29, after the VoiceOver fix: exit 0.** Typecheck clean, build ok. Unit **84/84**. Live: 11 pass, 0 fail, 7 skipped (no Anthropic key). E2E: 47 tests, **40 pass, 0 fail, 7 skipped** (buyer purchase, manual purchase, 5 video recordings), no retries. Spikes: 23 pass, 3 skipped. `npm audit --omit=dev`: 0 vulnerabilities.
 
 **Full run 2026-10-29, later (new app `APP-7R312336N90066720`, after the verified purchase and the fresh-id test correction, commit `2117d0d`): exit 0.** Typecheck clean, build ok. Unit **84/84**. Live: 11 pass, 0 fail, 7 skipped (no Anthropic key). E2E: 46 tests, **39 pass, 0 fail, 7 skipped** (buyer purchase, manual purchase, 5 video recordings), no retries logged. Spikes: 23 pass, 0 fail, 3 skipped. `npm audit --omit=dev`: 0 vulnerabilities. Secret scan (old and new PayPal keys, all files and all history): 0 hits.

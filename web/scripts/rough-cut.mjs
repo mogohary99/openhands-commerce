@@ -9,6 +9,9 @@ import { mkdirSync, writeFileSync } from "node:fs";
 import path from "node:path";
 
 const DIR = path.resolve("../docs/video/scenes");
+// FINAL=1 drops the "DRAFT CARD" tag from the title, diagram and closing cards (final-cut.mjs sets it).
+// The "NOT FILMED" card is always labelled.
+const FINAL = process.env.FINAL === "1";
 const TMP = path.join(DIR, "rough-cut-parts");
 mkdirSync(TMP, { recursive: true });
 const ff = (args) => execFileSync("ffmpeg", ["-v", "error", "-y", ...args], { stdio: "inherit" });
@@ -19,7 +22,7 @@ const card = (kind, title, sub) => `<!doctype html><meta charset="utf-8"><style>
   background:${kind === "placeholder" ? "#4a4a4a" : "#0f2a44"};color:#fff}
   p{font:400 30px system-ui,sans-serif;max-width:1050px;line-height:1.35;margin:28px 0 0}
   .tag{font:700 26px system-ui;letter-spacing:.08em;border:3px solid #fff;padding:6px 18px;margin-bottom:36px}</style>
-  ${kind === "placeholder" ? '<div class="tag">PLACEHOLDER: NOT FINAL FOOTAGE</div>' : kind === "tomake" ? '<div class="tag">DRAFT CARD</div>' : kind === "notfilmed" ? '<div class="tag">NOT FILMED</div>' : ""}
+  ${kind === "placeholder" ? '<div class="tag">PLACEHOLDER: NOT FINAL FOOTAGE</div>' : kind === "tomake" && !FINAL ? '<div class="tag">DRAFT CARD</div>' : kind === "notfilmed" ? '<div class="tag">NOT FILMED</div>' : ""}
   <div>${title}</div><p>${sub}</p>`;
 
 // [out-seconds, source]: a clip is {file, from, to}; a slate is {card:[kind,title,sub], secs}.
@@ -65,6 +68,6 @@ for (const [i, row] of timeline.entries()) {
 await browser.close();
 const list = path.join(TMP, "list.txt");
 writeFileSync(list, parts.map((p) => `file '${p}'`).join("\n"));
-const final = path.join(DIR, "rough-cut.mp4");
+const final = path.join(DIR, FINAL ? "cut-final-cards.mp4" : "rough-cut.mp4");
 ff(["-f", "concat", "-safe", "0", "-i", list, "-c", "copy", final]);
 console.log(final, execFileSync("ffprobe", ["-v", "error", "-show_entries", "format=duration", "-of", "csv=p=0", final]).toString().trim() + "s");

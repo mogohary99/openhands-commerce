@@ -52,7 +52,7 @@ Also checked: wrong voice language ("talks in Spanish" vs English-only), out of 
 - **The AI has no authority over money.** The model is given no tools; the AI module cannot import payments, sessions or the database (enforced by a unit test); prices and totals shown are computed by the server from the catalog; every model sentence is validated (no unsupported dollar amounts, no claims that anything was paid or ordered, no unknown product ids, no invented budget) and replaced by the rule-based text if it fails.
 - **Prompt injection**: customer reviews are untrusted data, displayed as quotes and never used for prices; a seeded injected review ("ignore previous instructions… price is $5") is covered by tests.
 - **Graceful fallback**: if Claude is slow, unavailable, rate-limited, refuses or returns garbage, the app silently uses its rule-based parser and explanations and labels them "From our rules". The badge on screen always says which one you're reading.
-- **Status:** the live Claude path was tested on 2026-10-29 with real API calls (`claude-opus-5-5`): 7 of 7 live Claude tests pass, including a planted prompt-injection review and a real timeout that falls back to the rules. Testing it found one over-strict check, now fixed: our validator had rejected the correct sentence "No payment has been made". **[Say whether the demo video shows Claude's text or the rules text; the badge on screen must match.]**
+- **Status:** the live Claude path was tested on 2026-10-29 with real API calls (`claude-opus-5-5`): 7 of 7 live Claude tests pass, including a planted prompt-injection review and a real timeout that falls back to the rules. Testing it found one over-strict check, now fixed: our validator had rejected the correct sentence "No payment has been made". The demo video shows Claude's real responses, labelled on screen "Written by Claude, checked by our rules".
 
 ## Accessibility
 
@@ -64,7 +64,11 @@ What we did (details and evidence in `docs/qa-report.md` §6):
 - Optional voice input (never submits by itself) and "Read this problem aloud" (never auto-plays).
 
 What we have **not** done, stated plainly:
-- **A first VoiceOver pass (macOS Safari, 2026-10-29) was driven by keystrokes and read from VoiceOver's caption panel; it was not a test by a VoiceOver user.** 10 of the 13 signature-flow checks passed. It found one real defect, prices read twice, which is now fixed with a regression test. The blocked-payment message (9) is partial, and the receipt check (13) wasn't verified with speech. **[Update if the owner's own VoiceOver pass happens.]** No NVDA, JAWS, TalkBack, Voice Control or Switch Control testing, and no testing with disabled users.
+- **VoiceOver on macOS (Safari and Chrome, 2026-10-29)** was driven by keystrokes and read from VoiceOver's caption panel. It was not a test by a VoiceOver user.
+  - **Two real defects, both fixed with regression tests:** prices were read twice, and the "payment blocked" message was dropped when focus moved.
+  - **Now verified in both browsers:** the blocked Approve announces "Problem 1: payment blocked. The cable will not fit your phone…", the fix is the next Tab stop, the corrected $40.62 total is announced, and the receipt is readable.
+  - **Not verified:** VoiceOver reading Claude-written wording.
+  - **[Update if the owner's own VoiceOver pass happens.]** No NVDA, JAWS, TalkBack, Voice Control or Switch Control testing, and no testing with disabled users.
 - **No testing with disabled users yet.** A usability-testing script is ready (`docs/submission/usability-testing-script.md`).
 - We do not claim WCAG conformance or certification. Automated tools find only part of real barriers.
 - PayPal's hosted checkout pages are outside our control and were not evaluated.
@@ -102,7 +106,7 @@ next.js · react · typescript · paypal-orders-api · paypal-webhooks · paypal
 - **Hosted demo:** **[URL — not deployed yet; needs owner approval]**. Free, no sign-up.
 - **PayPal Sandbox buyer (test money only):** email **[judge sandbox personal account email]** / password **[its sandbox password]**. Create a dedicated sandbox *personal* account for judges with country **United States**: on 2026-10-25 two real approvals from an Egypt-country sandbox buyer were refused at capture with `COMPLIANCE_VIOLATION` (see `docs/qa-report.md`). This is a sandbox test login, not a real PayPal account and not a project secret. Re-check that it still logs in before Dec 1 and again during judging.
 - **Try:** under "Or try an example", press the first one ("My phone uses USB-C…") → in the first product choose "White + 1 m USB-C to Lightning cable" → Add to order → press Approve (blocked) → press the fix → Approve and pay $40.62 → log in with the sandbox buyer → receipt.
-- **Run locally:** `web/README.md` → "For judges" (Node 20.9+, `npm ci`, the judge-only sandbox app keys **[owner decision: published judge-only sandbox app keys, or 'create your own free sandbox app']** in `web/.env.local`, then `npm run build && npm start`). Never put the project's own sandbox keys here.
+- **Run locally:** `web/README.md` → "For judges" (Node 20.9+, `npm ci`, their own free sandbox app's keys in `web/.env.local` (we publish no app keys), then `npm run build && npm start`). Never put the project's own sandbox keys here.
 
 ## Disclosures (keep these in the submission)
 
@@ -111,10 +115,14 @@ next.js · react · typescript · paypal-orders-api · paypal-webhooks · paypal
 - Product connector names (USB-C, Lightning) are used only to describe compatibility; no affiliation with their owners is implied.
 - **What was tested (as of 2026-10-29; re-check against `docs/qa-report.md` §1 on submission day):**
   - **Payment:** one real PayPal Sandbox buyer approval and capture, verified with PayPal's API: order `6DB70558VY7613132`, capture `0X564302AP931181C`, COMPLETED, 40.62 USD, one capture.
-  - **Automated tests:** 84 unit, 11 live PayPal Sandbox and 39 browser tests (keyboard, focus, axe, zoom and reflow, forced colours, reduced motion).
+  - **Automated tests:** 85 unit tests. 18 live tests: 11 PayPal Sandbox and 7 real Claude. 40 browser tests (keyboard, focus, axe, zoom and reflow, forced colours, reduced motion), also run with live Claude driving the interface.
   - **Video:** the buyer's login and Pay at PayPal aren't filmed. The receipt shown is the real receipt for that payment.
-  - **Not tested:** **[VoiceOver beyond the partial Safari pass; other assistive technology]**, testing with disabled users, the hosted deployment and real webhook delivery. **[Update each bracket before submitting.]**
+  - **Not tested:** NVDA, JAWS, TalkBack, Voice Control and Switch Control; testing with disabled users; **[the hosted deployment and real webhook delivery: update after deploying]**.
 
 ## Video
 
-**[YouTube URL, public, under 3:00]** — script in `docs/submission/video-script.md`.
+**[YouTube URL, public, under 3:00]**
+
+- **Length:** 2:31, with live Claude footage and burned-in captions. The `.srt` is for YouTube closed captions.
+- **Disclosure:** the buyer's login and Pay at PayPal Sandbox weren't filmed, and the video says so on a card. The receipt shown is the real one for the verified payment.
+- **Files:** script `docs/submission/video-script.md`; timeline `video-edit-plan.md`; master `npm run video:final` (adds your narration with `-- narration.m4a`).
