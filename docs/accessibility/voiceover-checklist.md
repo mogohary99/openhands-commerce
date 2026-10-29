@@ -50,12 +50,32 @@ Exact captions:
   - **PASS for understandability.** Starting at the heading after a real PayPal redirect is NOT VERIFIED.
 - **Not run:**
   - 12 (paying);
-  - the Chrome + VoiceOver pass: the session ran out of budget, so it's still to do with `chrome-vo.mjs`;
   - the order and capture IDs further down the receipt, which weren't reached by VO+→ in this run.
 - **What went wrong during the run, and was handled:**
   - The first attempt read nothing useful: the VoiceOver welcome dialog hadn't closed, so every caption said "You are currently on an image…".
   - VoiceOver's toggle at the end of each run didn't take, so it was switched off afterwards and confirmed off.
   - A caption once said "Phone is launched in the background". The Phone app wasn't running when checked.
+
+### Chrome (for Testing) + VoiceOver, 2026-10-29 18:43
+
+All page input went through Playwright, inside its own test window only. VO+→ was sent only while that window was frontmost. VoiceOver was off before and off afterwards: the script's own toggle didn't take, so it was switched off again and confirmed off.
+
+- **Load:** "You are currently on web content…". Tab: "link, Skip to main content". Then Enter and Tab: "Describe what you need For example: … text entry area, Describe what you need, search". Then "heading level 2, 3 options for you, 3 options for you, region". **PASS**
+- **Options, each price read once (5):** "White + 1 m USB-C to USB-C cable $31.99 · $40.62 with shipping and tax, selected, radio button, 2 of 3, Choose an option, group" · "White + 1 m USB-C to Lightning cable $31.99 · $40.62 with shipping and tax, selected, radio button, 3 of 3" · "Add to order and review : VoltLine 30W USB-C Wall Charger, button, …". **PASS**
+- **Arrival (6):** "main, Problem 1: payment blocked. The cable will not fit your phone This bundle includes a Lightning cable, but you said your phone uses USB-C. The cable would not fit…". **PASS**
+- **Fix (7) and blocked Approve (8):**
+  - fix: "Switch to the USB-C cable bundle (same price), button, Problem 1: payment blocked…";
+  - Approve: "Approve and pay $40.62 with PayPal Payment is blocked until the problem above is fixed., dimmed, button, Total, complementary".
+
+  **PASS**
+- **Enter on the blocked Approve (9):** "main, Problem 1: payment blocked. The cable will not fit your phone This bundle includes…", with focus `problem-0`. Then Tab: "Switch to the USB-C cable bundle (same price), button, …", with focus `fix-0`. **PASS**
+- **After the fix (10) and Approve (11):** "main, Your order now matches Total $40.62 — within your $45.00 budget., region", then "Approve and pay $40.62 with PayPal Next, you'll log in to PayPal Sandbox and confirm…". It was never pressed. **PASS**
+- **Receipt of the verified order (13; scratch copy of the database, no new payment):**
+  - On load: "heading level 1 Payment complete: $40.62, 2 items, main", with focus `receipt-title`.
+  - VO+→ then read: "Verified with PayPal." / "PayPal reports this payment as" / "completed" / "$40.62 USD" / ", which matches the total you approved." / "How this payment was checked, region" / "heading level 2, How this payment was checked" / "list 4 items" / "Our server checked every item against what you told us and calculated the total from the catalog., 1 of 4" / "You approved exactly $40.62 with PayPal., 2 of 4" / "We asked PayPal to capture the payment once, using a single request ID so a retry can't charge twice., 3 of 4".
+  - **PASS for understandability.**
+  - **Open minor issue:** in Chrome, the "Verified with PayPal" sentence is split into five stops at its bold words; Safari reads it as one sentence. It's not fixed yet, because any change needs another VoiceOver check.
+- **Not reached:** the order and capture IDs further down the receipt, in either browser. 12 (paying) was not run.
 
 ## P1 — recovery and "did I pay?"
 

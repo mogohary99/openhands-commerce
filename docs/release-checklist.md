@@ -41,7 +41,7 @@
 - [x] (2026-10-29) First VoiceOver pass in Safari, by Claude with the owner's permission: 10 of 13 P0 checks passed. Two fixes came out of it, each with a regression test:
   - prices were read twice;
   - the blocked-Approve message was dropped, so focus now returns to the problem, named "Problem 1: payment blocked. …".
-- [ ] Re-run P0 in Safari and in Chrome with VoiceOver, to hear the new blocked-Approve behaviour (item 9) and the receipt (item 13). Claude runs it with a guard before every key, only when the owner says the Mac is free. Waiting for 10 idle minutes doesn't work: the screen locks first (seen 2026-10-29 17:40, run aborted cleanly). 12 (paying) stays NOT RUN.
+- [x] (2026-10-29 18:26 Safari, 18:43 Chrome) The P0 re-check passed for 5–11, and the receipt is understandable. The open minor issue is that the Chrome receipt sentence is split at bold words. ~~Re-run P0 in Safari and in Chrome with VoiceOver, to hear the new blocked-Approve behaviour (item 9) and the receipt (item 13). Claude runs it with a guard before every key, only when the owner says the Mac is free. Waiting for 10 idle minutes doesn't work: the screen locks first (seen 2026-10-29 17:40, run aborted cleanly). 12 (paying) stays NOT RUN.~~
 - [ ] **Owner:** VoiceOver P0 (`docs/accessibility/voiceover-checklist.md`, items 1–13) in Safari, then Chrome. Fill in the Result column, word for word.
 - [ ] I fix every P0 defect, add a regression test where possible, and rerun the suite.
 - [ ] **Optional (owner):** sessions with assistive-technology users (`docs/submission/usability-testing-script.md`). Claim only the sessions that happened.

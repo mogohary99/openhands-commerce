@@ -253,7 +253,8 @@ Earlier manual script order `946825133C0963026` was never approved; it timed out
 Results:
 - **Pass:** items 5, 6, 7, 8, 9, 10 and 11. The blocked Approve now speaks "Problem 1: payment blocked. The cable will not fit your phone …", and the fix is the next Tab stop. Prices are read once, and the corrected $40.62 total is announced.
 - **Receipt (13):** understandable with VO+→. Focus on the heading after a real PayPal redirect is NOT VERIFIED.
-- **Not run:** Chrome + VoiceOver.
+- **Chrome + VoiceOver (18:43):** the same results as Safari for 5–11. The receipt heading is announced on load ("heading level 1 Payment complete: $40.62, 2 items, main").
+- **Open minor issue (Chrome only):** the "Verified with PayPal…" sentence is read as five fragments at its bold words. Not fixed yet.
 
 Exact captions: `docs/accessibility/voiceover-checklist.md`.
 
