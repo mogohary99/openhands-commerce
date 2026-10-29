@@ -81,7 +81,7 @@ What we have **not** done, stated plainly:
 
 - The signature moment works keyboard-only and is asserted end-to-end against Chrome's accessibility tree.
 - A payment flow where refreshes, double clicks, replayed return URLs and retried captures cannot charge twice — enforced both by our database and by PayPal's idempotency, and tested.
-- **[Real sandbox buyer-approved capture independently confirmed via the Orders API — fill in once the live buyer test has run: order id, capture id.]**
+- **A real sandbox buyer approval and capture was confirmed independently through the Orders API on 2026-10-29:** order `6DB70558VY7613132`, capture `0X564302AP931181C`, COMPLETED, 40.62 USD, exactly one capture. Test money only.
 
 ## What we learned
 

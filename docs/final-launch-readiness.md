@@ -46,7 +46,11 @@ Everything below was done locally. Nothing has been pushed, deployed, subscribed
 
 ## 3. Real PayPal payment
 
-**BLOCKED.**
+**VERIFIED on 2026-10-29.**
+- **The payment:** order `6DB70558VY7613132`, capture `0X564302AP931181C`, COMPLETED, 40.62 USD, exactly 1 capture, US buyer, new app `APP-7R312336N90066720`. Evidence: `docs/evidence/sandbox-purchase-manual-buyer.json`; details in `qa-report.md` §3a.
+- **The test:** one assumption about PayPal's answer to a fresh-id capture was wrong (201, not 422), and it has been corrected. It doesn't affect the single-capture result.
+
+**History (2026-10-25):**
 - **What happened:** on 2026-10-25 the owner approved twice as a real sandbox buyer. PayPal refused both captures with `COMPLIANCE_VIOLATION`. PayPal shows 0 captures, and the payer country was EG.
 - **Fixed:** the store now says "PayPal refused this payment. Nothing was charged." It used to say "try again in a moment".
 - **Follow-up GET (later the same day):** each order now holds one **DECLINED** capture, and the order status field is gone. Nothing was charged. Evidence: `docs/evidence/sandbox-compliance-violation-2026-10-25.json`. A draft support request is in `docs/paypal-support-request.md` (not sent).

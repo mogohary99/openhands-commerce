@@ -1,4 +1,6 @@
-# Draft: PayPal developer support request (not sent)
+# Draft: PayPal developer support request (not sent, and not needed for now)
+
+**2026-10-29:** with a US sandbox buyer and a new US sandbox business merchant and app, capture COMPLETED (`qa-report.md` §3a). Keep this draft only in case judges, or another account, hit `COMPLIANCE_VIOLATION`.
 
 **Send it only if the US sandbox test also fails, or if you want PayPal's answer anyway.**
 - **Where:** https://developer.paypal.com/support/ → "Contact us", or the PayPal Developer Community.

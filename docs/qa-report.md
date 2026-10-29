@@ -8,8 +8,10 @@ Legend: **LIVE** = real call to PayPal Sandbox / Anthropic. **AUTO** = automated
 
 | Question | Answer |
 |---|---|
-| Did a real sandbox buyer approve a payment? | **Yes, twice, but neither was captured.** On 2026-10-25 around 11:43 local, the owner logged in at PayPal Sandbox and approved orders `3EW601627R616202L` and `91U83791YC987840L` ($40.62 USD each). PayPal refused both captures with 422 `COMPLIANCE_VIOLATION`. PayPal's API shows both `APPROVED` with **0 captures**, payer country `EG` (§3b). **So no capture has been verified yet.** Earlier, unattended, on 2026-10-25: `npm run purchase:manual` reached PayPal's login page for sandbox order `6E5462927B134152K` ($40.62) and waited 10 minutes; nobody logged in, so it timed out with nothing approved or charged (§3a). `PAYPAL_SANDBOX_BUYER_EMAIL`/`PASSWORD` are still empty in `web/.env.local` (rechecked 2026-10-24, file unchanged since Oct 23), and the PayPal developer dashboard requires the owner's Face ID / Touch ID login, which we do not bypass. A manual path that needs no stored password is ready: `npm run purchase:manual` (the owner logs in at PayPal; §3a). |
-| Does PayPal independently confirm a capture? | **No capture exists yet.** PayPal confirmed that the two refused orders have 0 captures. The buyer-flow test that asserts it via `GET /v2/checkout/orders/{id}` is written and **skipped**. |
+| Did a real sandbox buyer approve a payment? | **Yes, and it was captured.**
+- **2026-10-29:** the new sandbox app `APP-7R312336N90066720` (US sandbox business merchant) was configured. The owner logged in as the US sandbox personal account during `npm run purchase:manual` and pressed Pay. Order `6DB70558VY7613132`, capture `0X564302AP931181C`, **COMPLETED, 40.62 USD, exactly 1 capture**, payer country US (§3a).
+- **Earlier, 2026-10-25:** two approvals by an Egypt-country sandbox buyer against the old app were refused with `COMPLIANCE_VIOLATION`, 0 money moved (§3b). |
+| Does PayPal independently confirm a capture? | **Yes.** `GET /v2/checkout/orders/6DB70558VY7613132` (debug `f814102f85860`) and `GET /v2/payments/captures/0X564302AP931181C` (debug `f22969340ead4`) both report COMPLETED for 40.62 USD. Evidence: `docs/evidence/sandbox-purchase-manual-buyer.json`. |
 | Was live Claude tested? | **No.** `ANTHROPIC_API_KEY` is not set; 7 live Claude tests (extraction, injection, mismatch and over-budget explanations, comparison intro, planted review, real timeout) skipped. Fallback paths were tested through the real SDK against a local fake server (AUTO). |
 | Was real assistive-technology testing performed? | **No.** No VoiceOver/NVDA/Voice Control/Switch Control session and no testing with disabled users. Chrome's accessibility tree was inspected automatically. |
 | Real money? | None possible: PayPal base URL hard-coded to sandbox; enforced by a unit test. |
@@ -96,12 +98,12 @@ All against `api-m.sandbox.paypal.com` with the project's sandbox REST app. Fail
 Earlier manual script order `946825133C0963026` was never approved; it timed out at `CREATED`; nothing captured.
 
 
-### 3a. Manual buyer purchase (prepared, attempted 2026-10-25, NOT COMPLETED)
+### 3a. Manual buyer purchase: COMPLETED and verified on 2026-10-29
 
 `cd web && npm run build && npm run purchase:manual` opens Chrome on a temporary profile and drives the store to PayPal Sandbox. It then waits up to 10 minutes while the owner logs in with the sandbox **personal** account and pays. No buyer credentials are read or stored. After the redirect it runs the same verification as the automated buyer test (`test/e2e/paypal-verify.ts`):
 - PayPal reports the order `COMPLETED`: 40.62 USD, with 5.99 shipping and 2.64 tax, `custom_id` present, exactly one capture, that capture `COMPLETED` for 40.62 USD with the same id the receipt shows.
 - Reloading the receipt and replaying the return URL, with and without PayerID, leave the receipt unchanged. The cart is closed.
-- A direct re-capture with the app's request id returns the same capture. With a fresh request id PayPal answers 422 `ORDER_ALREADY_CAPTURED`. Afterwards there is still exactly one capture.
+- A direct re-capture with the app's request id returns the same capture. With a fresh request id the test originally expected 422 `ORDER_ALREADY_CAPTURED`; live, PayPal answered **201** (see below). Afterwards there is still exactly one capture.
 - Evidence (ids and statuses only) goes to `docs/evidence/sandbox-purchase-manual-buyer.json`.
 
 **2026-10-25 attempt.**
@@ -110,6 +112,25 @@ Earlier manual script order `946825133C0963026` was never approved; it timed out
 - **Second run:** it reached PayPal's login page for order `6E5462927B134152K`, created for $40.62 USD. It waited 10 minutes, nobody logged in (the owner was away), and it timed out.
   - Nothing was approved or captured, and no evidence file was written. Afterwards an independent `GET /v2/checkout/orders/6E5462927B134152K` returned `PAYER_ACTION_REQUIRED`, 40.62 USD, 0 captures.
   - **Status: BLOCKED on the owner's PayPal Sandbox login.**
+
+**2026-10-29 run: VERIFIED.**
+- **Setup:** the new sandbox app `APP-7R312336N90066720`. Its keys were written into both `.env.local` files by a clipboard helper, never shown or logged. The old files are backed up as `.env.local.bak-2026-10-29`.
+- **The new merchant:** a probe order shows a different payee merchant (`PB…5A`, a `business.example.com` sandbox account; the old one was `WD…3N`). The new app gets 404 on both refused orders. The API doesn't report the merchant's country.
+- **Before the run:** `npm run test:live` with the new keys gave 11 pass and 7 skipped (Claude), and the production build succeeded.
+- **The purchase:** the owner logged in as the US sandbox personal account and pressed Pay. Order `6DB70558VY7613132` was created for $40.62 USD.
+- **Checks that passed in the run:**
+  - the receipt shows "Payment complete: $40.62", focused;
+  - the "How this payment was checked" panel is there;
+  - GET order: COMPLETED, 40.62 USD, shipping 5.99, tax 2.64, the quote-hash `custom_id`, exactly 1 capture, COMPLETED, with the same id as the receipt;
+  - a receipt reload and two return-URL replays left the receipt unchanged;
+  - the cart was closed;
+  - a capture replay with the app's own request id returned the same capture.
+- **The one failed assertion (test bug, not a payment problem):** the test expected a capture with a *fresh* request id to get 422 `ORDER_ALREADY_CAPTURED`. PayPal answered **201**. A GET made afterwards still shows exactly **one** capture, `0X564302AP931181C`, so no second payment was created.
+  - The test's expectation had never been checked against a real completed capture.
+  - **Corrected assertion:** either 422 `ORDER_ALREADY_CAPTURED`, or 2xx with the order COMPLETED and the original capture as the only capture. The final "exactly one capture" check is unchanged.
+  - The 201 response body wasn't recorded. A second observation call was declined by the session's safety classifier, and I didn't work around it.
+  - **The corrected assertion hasn't run against PayPal yet.** It needs another buyer approval. Until then the test's status is NOT RE-RUN.
+- **Evidence:** `docs/evidence/sandbox-purchase-manual-buyer.json`, written by hand from PayPal's API responses, because the test stopped before writing it.
 
 ### 3b. Real buyer approvals refused at capture: COMPLIANCE_VIOLATION (2026-10-25)
 
@@ -139,7 +160,7 @@ Earlier manual script order `946825133C0963026` was never approved; it timed out
 - **Now:** if PayPal's order already holds a capture, we record that capture's outcome. Here that's `declined`, never paid, and no second capture is sent.
 - **Regression test:** 1 new unit test, which fails on the old code (`not_approved`) and passes with the fix.
 
-**US sandbox hypothesis: NOT TESTED.** Creating the US sandbox accounts and the app needs the PayPal Developer dashboard. The Chrome extension wasn't connected, and that dashboard needs the owner's login.
+**US sandbox hypothesis: SUPPORTED, not proven.** On 2026-10-29, with a US sandbox buyer and a new merchant, the capture completed (§3a). Two things changed at once, the buyer's country and the merchant/app, so this doesn't show which one caused the refusal. The support request wasn't needed and wasn't sent.
 
 ### 3c. PayPal Sandbox instability vs application failures (2026-10-25)
 

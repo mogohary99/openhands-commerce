@@ -1,6 +1,6 @@
 # Release checklist, in priority order
 
-**Status on 2026-10-25: NOT submission-ready.** There is no verified capture, no live AI, no screen-reader pass, no hosted demo and no final video.
+**Status on 2026-10-29: NOT submission-ready.** A verified capture now exists (P1). Still missing: live AI, a screen-reader pass, a hosted demo and the final video.
 
 **Deadline:** Nov 12, 12:00 pm PT. **Target:** submit Nov 10–11. Nothing can change after the deadline. Each gate lists the evidence that closes it; "done" without that evidence doesn't count.
 
@@ -9,12 +9,13 @@
 - [ ] **Owner:** in developer.paypal.com → Sandbox accounts, create a **personal** and a **business** account with country **United States**.
   - Why: two real approvals from the current Egypt-country sandbox accounts were refused with `COMPLIANCE_VIOLATION` (`qa-report.md` §3b).
 - [x] **Owner (2026-10-26):** created US sandbox personal and business accounts and a new app.
-- [ ] **Owner:** get the new app's keys into the project. They still aren't in `web/.env.local` or `spikes/.env.local`: on 2026-10-29 the project still used `APP-1EV4688594317942R`. A clipboard helper on this Mac (run by Claude) writes both files and refuses the old app; the owner only clicks Copy for the Client ID and the Secret.
+- [x] (2026-10-29) New app keys configured in both files; merchant differs from the old one. ~~**Owner:** get the new app's keys into the project. They still aren't in `web/.env.local` or `spikes/.env.local`: on 2026-10-29 the project still used `APP-1EV4688594317942R`. A clipboard helper on this Mac (run by Claude) writes both files and refuses the old app; the owner only clicks Copy for the Client ID and the Secret.~~
   - This also rotates the secret exposed in chat.
   - Then delete the old app's secret, or the whole old app.
-- [ ] `cd web && npm run build && npm run test:live`: the PayPal tests pass with the new keys.
-- [ ] **Owner:** start a screen recording (⌘⇧5), run `npm run purchase:manual`, log in as the US personal account and press Pay.
-- [ ] **Evidence:** `docs/evidence/sandbox-purchase-manual-buyer.json` shows `COMPLETED`, 40.62 USD, `capturesAfterReplays: 1`, a same-id replay returning the same capture, and a fresh id getting 422 `ORDER_ALREADY_CAPTURED`.
+- [x] `npm run build && npm run test:live` with the new keys: 11 pass, 7 skipped (Claude).
+- [x] **Owner (2026-10-29):** logged in as the US personal account and pressed Pay. Order `6DB70558VY7613132`.
+- [x] **Evidence:** written by hand from PayPal's GET responses: COMPLETED, 40.62 USD, 1 capture. A fresh request id got 201, not 422; still 1 capture. ~~The original target: `COMPLETED`, 40.62 USD, `capturesAfterReplays: 1`, a same-id replay returning the same capture, and a fresh id getting 422 `ORDER_ALREADY_CAPTURED`.~~
+- [ ] Re-run `purchase:manual` once with the corrected fresh-id assertion, so the evidence file is written by the test itself. Optional, and it needs one more owner approval. A screen recording during that run gives the video its payment footage.
 - [ ] If capture fails again: don't retry that order. Fill in the merchant ID in `docs/paypal-support-request.md`, add the new debug_id, and send it (owner).
 - [ ] I copy the order and capture ids into `qa-report.md` §1/§3a and into devpost.md.
 

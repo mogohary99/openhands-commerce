@@ -1,0 +1,26 @@
+{
+  "ranAt": "2026-10-29 (capture 2026-10-29T10:56:14Z)",
+  "mode": "manual-buyer",
+  "environment": "PayPal Sandbox (api-m.sandbox.paypal.com), app APP-7R312336N90066720, US sandbox business merchant",
+  "note": "Test money only. Written by hand from PayPal's own API responses because the test stopped at its fresh-request-id assertion (see qa-report §3a). No credentials, tokens, emails, names or addresses.",
+  "paypalOrderId": "6DB70558VY7613132",
+  "paypalOrderStatus": "COMPLETED",
+  "payerCountry": "US",
+  "orderAmount": { "value": "40.62", "currency": "USD", "item_total": "31.99", "shipping": "5.99", "tax": "2.64" },
+  "captureId": "0X564302AP931181C",
+  "captureStatus": "COMPLETED",
+  "captureAmount": { "value": "40.62", "currency_code": "USD" },
+  "finalCapture": true,
+  "sellerReceivable": { "gross": "40.62", "paypal_fee": "1.91", "net": "38.71" },
+  "capturesAfterReplays": 1,
+  "independentGet": { "orderGetDebugId": "f814102f85860", "captureGetDebugId": "f22969340ead4" },
+  "checksPassedInTheRun": [
+    "receipt heading 'Payment complete: $40.62', focused",
+    "'How this payment was checked' shows completed for $40.62 USD",
+    "GET order: COMPLETED, 40.62 USD, shipping 5.99, tax 2.64, quote-hash custom_id, exactly 1 capture, COMPLETED, id equals the receipt's",
+    "receipt reload and two return-URL replays (with and without PayerID): receipt unchanged",
+    "purchased cart closed ('Your order is empty')",
+    "capture replay with the app's own request id: 2xx, same capture id"
+  ],
+  "freshRequestIdCapture": { "status": 201, "expectedByOldTest": "422 ORDER_ALREADY_CAPTURED", "responseBody": "not recorded", "secondCaptureCreated": false, "evidence": "later GET shows exactly 1 capture, 0X564302AP931181C" }
+}
