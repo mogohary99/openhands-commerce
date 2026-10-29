@@ -11,7 +11,7 @@ Nothing has been made public, deployed, paid for, uploaded or submitted. The onl
 | Area | Status | Evidence |
 |---|---|---|
 | Private GitHub repo | **DONE.** `https://github.com/mogohary99/openhands-commerce`. It's PRIVATE: a signed-out request gets 404. The remote `main` matches the local `HEAD`. GitHub detects the Apache-2.0 licence for the About section, and the repo has topics | §2 |
-| Independent build from GitHub | **PASS.** A fresh clone, built with production `npm ci` and `npm run build`, typechecks and passes unit tests 85/85 (before the rate-limit change) | §2 |
+| Independent build from GitHub | **PASS.** A fresh clone at `42c7d10` (the current code), built with production `npm ci` and `npm run build`, typechecks and passes unit tests 86/86 | §2 |
 | Render deployment | **BLOCKED: owner approval and owner login.** The exact plan, price and recurring terms are in `deployment.md` (rechecked 2026-10-29). The hosted test suite is ready (`HOSTED_URL=… npm run test:e2e`) | §3 |
 | Hosted PayPal (create order, cancel, return, webhook) | **NOT TESTED** (no host). It was dry-run locally: a real sandbox order was created and cancelled on **PayPal's own page**, we got "Nothing was charged", and 0 captures | §3 |
 | Hosted Claude | **NOT TESTED** (no host). Locally, live Claude passes 7/7, and the results badge says "Written by Claude" | `qa-report.md` §3d |

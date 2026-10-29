@@ -36,10 +36,10 @@ Legend: **LIVE** = real call to PayPal Sandbox / Anthropic. **AUTO** = automated
 - `npm run test:all`: typecheck clean, build ok, unit **86/86**, live **18/18** (11 PayPal Sandbox + 7 Claude), browser **41 pass, 0 fail, 7 skipped**, 0 PayPal retries logged.
   - The 7 skipped: the automated buyer purchase (no stored password, by design), `purchase:manual` (owner only), and 5 video-scene recordings (on demand).
   - `hosted.spec.ts` runs only with `HOSTED_URL`.
-- `E2E_LIVE_AI=1 npm run test:e2e`: LIVEAI_RESULT.
+- `E2E_LIVE_AI=1 npm run test:e2e` (live Claude driving the interface): **41 pass, 0 fail, 7 skipped** (the same 7), exit 0.
 - Spikes: typecheck clean, **26/26**. `npm audit --omit=dev`: 0 vulnerabilities.
 - **Secret scan, before the private push:** every secret-looking value from all local `.env*` files, including backups (5 distinct values), was searched across 144 tracked files and the full history of 47 commits, with 0 hits. Pattern scans (Anthropic, PayPal secret-like, bearer, private key, GitHub and AWS tokens) also gave 0 hits.
-- **Independent build from GitHub:** a fresh `git clone` of the private repo at `ae6f9be`. Production `npm ci`, `npm run build` and typecheck succeeded, and unit tests passed 85/85.
+- **Independent build from GitHub:** fresh `git clone`s of the private repo. At `ae6f9be`: production `npm ci`, `npm run build` and typecheck succeeded, and unit tests passed 85/85. At `42c7d10` (this code): the same steps succeeded, with unit tests 86/86.
 - **Hosted suite dry run, locally** (`HOSTED_URL=http://localhost:3400`, production build, live keys):
   - **Pass:** the live-Claude badge; a real sandbox order created from the site; PayPal's own "Cancel and return" link coming back to our cancel URL with "Nothing was charged" and 0 captures; the phone-sized flow with axe.
   - **Expected failures** (they need a real host): https, HSTS and Secure cookie, `webhooks: configured`.
