@@ -9,7 +9,7 @@ Default narration is **rules-only**, which matches what the app shows today ("Fr
 | Out | Source | In → out of source | Picture | Narration (caption text) |
 |---|---|---|---|---|
 | 0:00–0:07 | `2-cold-open-blocked.mp4` | 0:00–0:07 | Problem panel, focused: "The cable will not fit your phone" | "This bundle has a Lightning cable, but my phone uses USB-C." |
-| 0:07–0:13 | `1-signature-moment.mp4` | 0:17–0:23 | Approve pressed, nothing charged, focus jumps to the fix | "So the store refuses to take my money, and puts the fix right where I am." |
+| 0:07–0:13 | `1-signature-moment.mp4` | 0:18.5–0:24.5 | Approve pressed, nothing charged, focus returns to the problem ("payment blocked"), then Tab reaches the fix | "So the store refuses to take my money, and puts the fix right where I am." |
 | 0:13–0:20 | **TO MAKE**: title card over a still of the 0:00 frame | n/a | "OpenHands Commerce: catches the mistake before you pay." Small line: "Fictional demo store · PayPal Sandbox · no real money" | "OpenHands Commerce: an accessible shopping assistant that checks your order before PayPal opens." |
 | 0:20–0:34 | `1-signature-moment.mp4` | 0:00–0:14 | Keyboard only: skip link, request typed, options, the Lightning bundle chosen | "I describe what I need in my own words, using only the keyboard. Then I pick the bundle with the wrong cable, the mistake you'd only catch by reading closely." |
 | 0:34–0:54 | `1-signature-moment.mp4` | 0:14–0:34 | Blocked review, the fix, "Your order now matches. Total $40.62, within your $45.00 budget", then Approve becomes available | "Payment is blocked, the reason is shown, and the fix is the very next stop. One key, same price, and the total, including shipping and tax, is checked against my budget." |

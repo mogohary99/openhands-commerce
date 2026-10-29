@@ -25,7 +25,7 @@ const card = (kind, title, sub) => `<!doctype html><meta charset="utf-8"><style>
 // [out-seconds, source]: a clip is {file, from, to}; a slate is {card:[kind,title,sub], secs}.
 const timeline = [
   { file: "2-cold-open-blocked.mp4", from: 0, to: 7 },
-  { file: "1-signature-moment.mp4", from: 17, to: 23 },
+  { file: "1-signature-moment.mp4", from: 18.5, to: 24.5 },
   { card: ["tomake", "OpenHands Commerce: catches the mistake before you pay.", "Fictional demo store · PayPal Sandbox · no real money"], secs: 7 },
   { file: "1-signature-moment.mp4", from: 0, to: 14 },
   { file: "1-signature-moment.mp4", from: 14, to: 34 },
