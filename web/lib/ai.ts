@@ -175,7 +175,7 @@ Explain every finding to the shopper in one or two short sentences each, then sa
     );
     const issues = validateExplanation(e, findings, quote);
     if (issues.length) {
-      logFallback("explain", new Error(`validation: ${issues.map((i) => i.kind).join(",")}`));
+      logFallback("explain", new Error(`validation: ${issues.map((i) => `${i.kind} (${i.detail})`).join(", ")}`));
       return fallback;
     }
     return { explanation: e, source: "claude" };

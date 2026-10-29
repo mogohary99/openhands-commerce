@@ -44,3 +44,15 @@ test("checkGeneratedText flags order-placed claims", () => {
 test("deterministic fallback explanation always validates", () => {
   assert.deepEqual(validateExplanation(deterministicExplanation(r.findings), r.findings, r.quote), []);
 });
+
+// Seen live (Claude Opus 5.5, 2026-10-29): "…$2.64 for tax. No payment has been made" was
+// rejected as a payment claim, so a correct explanation fell back to the rules text.
+test("a negated payment phrase is not a payment claim; a positive one still is", () => {
+  const ok = new Set<number>();
+  for (const t of ["No payment has been made.", "Nothing has been paid and no payment was made.", "Payment has not been made", "Your payment was never sent."]) {
+    assert.deepEqual(checkGeneratedText(t, ok).map((i) => i.kind), [], t);
+  }
+  for (const t of ["Your payment has been made.", "Payment complete.", "Good news: payment was approved.", "No problem, payment has been made.", "I have paid for it."]) {
+    assert.deepEqual(checkGeneratedText(t, ok).map((i) => i.kind), ["PAYMENT_CLAIM"], t);
+  }
+});

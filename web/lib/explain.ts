@@ -17,7 +17,10 @@ export type Explanation = z.infer<typeof ExplanationSchema>;
 
 const MONEY = /\$\s?(\d+(?:\.\d{1,2})?)/g;
 const PAYMENT_CLAIM =
-  /\b(payment (is |was |has been )?(complete|completed|approved|authori[sz]ed|sent|made)|i (have |'ve )?(paid|purchased|approved|ordered|bought)|(your )?order (is|has been) (placed|confirmed|shipped)|on sale|discount(ed)?|free gift)\b/i;
+  /\b(payment (is |was |has been )?(complete|completed|approved|authori[sz]ed|sent|made)|i (have |'ve )?(paid|purchased|approved|ordered|bought)|(your )?order (is|has been) (placed|confirmed|shipped)|on sale|discount(ed)?|free gift)\b/gi;
+// "No payment has been made" is the reassurance we want, not a claim: a claim phrase directly
+// after a negation is allowed. Anything else ("No problem, payment has been made") still fails.
+const NEGATED = /\b(no|not|nothing|never)\s+$/i;
 
 export interface ValidationIssue {
   kind: "UNSUPPORTED_AMOUNT" | "MISSING_FINDING" | "UNKNOWN_FINDING" | "PAYMENT_CLAIM";
@@ -30,7 +33,8 @@ export function checkGeneratedText(text: string, allowedCents: Set<number>): Val
     const cents = Math.round(Number(m[1]) * 100);
     if (!allowedCents.has(cents)) issues.push({ kind: "UNSUPPORTED_AMOUNT", detail: m[0] });
   }
-  if (PAYMENT_CLAIM.test(text)) issues.push({ kind: "PAYMENT_CLAIM", detail: "Model claimed a payment, order or promotion" });
+  const claim = [...text.matchAll(PAYMENT_CLAIM)].find((m) => !NEGATED.test(text.slice(0, m.index)));
+  if (claim) issues.push({ kind: "PAYMENT_CLAIM", detail: `Model claimed a payment, order or promotion: "…${text.slice(Math.max(0, claim.index - 30), claim.index + claim[0].length)}"` });
   return issues;
 }
 
