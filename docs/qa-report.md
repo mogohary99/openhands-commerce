@@ -248,6 +248,15 @@ Earlier manual script order `946825133C0963026` was never approved; it timed out
 
 ## 6. Accessibility findings
 
+### 6a0. VoiceOver re-check after the fixes (Safari, 2026-10-29 18:26)
+
+Results:
+- **Pass:** items 5, 6, 7, 8, 9, 10 and 11. The blocked Approve now speaks "Problem 1: payment blocked. The cable will not fit your phone …", and the fix is the next Tab stop. Prices are read once, and the corrected $40.62 total is announced.
+- **Receipt (13):** understandable with VO+→. Focus on the heading after a real PayPal redirect is NOT VERIFIED.
+- **Not run:** Chrome + VoiceOver.
+
+Exact captions: `docs/accessibility/voiceover-checklist.md`.
+
 ### 6a. First VoiceOver pass: Safari, 2026-10-29, partial
 
 **Setup:** run by Claude with the owner's permission, on macOS 26.2, Safari and VoiceOver. VoiceOver was off before the run and off afterwards. Its AppleScript control was not enabled, and no other setting was changed. The app ran locally from a scratch copy of the database.

@@ -33,6 +33,30 @@ Earlier status: nobody had tested OpenHands Commerce with VoiceOver. The "Expect
 | 12 | Approve → PayPal Sandbox → log in → Pay | (PayPal's pages: note anything that blocks you) || **NOT RUN.** It would create a new PayPal payment, and the owner decided against one. The verified 2026-10-29 purchase was approved by the owner and not narrated |
 | 13 | Back on the store | The heading **"Payment complete: $40.62"** has focus. "How this payment was checked" can be reached by VO+→. The order and capture IDs are read as text || **NOT VERIFIED with speech.** The receipt for the verified order (opened from a scratch copy of the database) showed "Payment complete: $40.62" with a visible focus ring in Safari. VoiceOver was off by then: it was turned off outside the script, and the run was stopped |
 
+### Re-check after the fixes: Safari + VoiceOver, 2026-10-29 18:26 (owner present, Mac unlocked)
+
+Exact captions:
+- **Load:** "Demo store." Tab: "Describe what you need For example: my phone uses USB-C, I need a charger with a cable, $45 all in., text entry area, Describe what you need, search". Then "Find options, button", then "heading level 2, 3 options for you, 3 options for you, region".
+- **Options, each price read once (5):** "White + 1 m USB-C to USB-C cable $31.99 · $40.62 with shipping and tax, selected, radio button, 2 of 3, Choose an option, group" · "White + 1 m USB-C to Lightning cable $31.99 · $40.62 with shipping and tax, selected, radio button, 3 of 3" · "Add to order and review : VoltLine 30W USB-C Wall Charger, button, …, article". **PASS**
+- **Arrival (6):** "main, Problem 1: payment blocked. The cable will not fit your phone This bundle includes a Lightning cable, but you said your phone uses USB-C. The cable would not fit…". **PASS**
+- **The next Tab (7):** "Switch to the USB-C cable bundle (same price), button, Problem 1: payment blocked. The cable will not fit your phone…". **PASS**
+- **Blocked Approve (8):** "Approve and pay $40.62 with PayPal Payment is blocked until the problem above is fixed., dimmed, button, Total, complementary". **PASS**
+- **Enter on the blocked Approve (9):** "main, Problem 1: payment blocked. The cable will not fit your phone This bundle includes a Lightning cable, but you said your phone uses USB-C. The cable would not fit…". Then Tab: "Switch to the USB-C cable bundle (same price), button, …". **PASS**: the reason is spoken and the fix is the next stop.
+- **After the fix (10):** "main, Your order now matches Total $40.62 — within your $45.00 budget., region". **PASS**
+- **Approve after the fix (11):** "Approve and pay $40.62 with PayPal Next, you'll log in to PayPal Sandbox and confirm. This is a fictional order and no real money moves. If you cancel at PayPal, nothing is…". It was never pressed. **PASS**
+- **Receipt of the verified order (13; scratch copy of the database, no new payment):**
+  - On load, after typing the address, VoiceOver started at "Progress, navigation", not at the focused heading. This may be how VoiceOver treats a load from the address bar; a real PayPal redirect wasn't tested.
+  - VO+→ then read: "list 4 items", "Describe(done), 1 of 4", "Check(done), 2 of 4", "Approve with PayPal(done), 3 of 4", "Receipt, current step, 4 of 4", "end of list", "end of, Progress, navigation", "heading level 1 Payment complete: $40.62, 2 items", "Verified with PayPal. PayPal reports this payment as completed for $40.62 USD, which matches the total you approved.", "How this payment was checked, region", "heading level 2, How this payment was checked", "Our server checked every item against what you told us and calculated the total from the catalog."
+  - **PASS for understandability.** Starting at the heading after a real PayPal redirect is NOT VERIFIED.
+- **Not run:**
+  - 12 (paying);
+  - the Chrome + VoiceOver pass: the session ran out of budget, so it's still to do with `chrome-vo.mjs`;
+  - the order and capture IDs further down the receipt, which weren't reached by VO+→ in this run.
+- **What went wrong during the run, and was handled:**
+  - The first attempt read nothing useful: the VoiceOver welcome dialog hadn't closed, so every caption said "You are currently on an image…".
+  - VoiceOver's toggle at the end of each run didn't take, so it was switched off afterwards and confirmed off.
+  - A caption once said "Phone is launched in the background". The Phone app wasn't running when checked.
+
 ## P1 — recovery and "did I pay?"
 
 | # | Do | Expected | Result |
