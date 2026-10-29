@@ -12,7 +12,10 @@ Legend: **LIVE** = real call to PayPal Sandbox / Anthropic. **AUTO** = automated
 - **2026-10-29:** the new sandbox app `APP-7R312336N90066720` (US sandbox business merchant) was configured. The owner logged in as the US sandbox personal account during `npm run purchase:manual` and pressed Pay. Order `6DB70558VY7613132`, capture `0X564302AP931181C`, **COMPLETED, 40.62 USD, exactly 1 capture**, payer country US (§3a).
 - **Earlier, 2026-10-25:** two approvals by an Egypt-country sandbox buyer against the old app were refused with `COMPLIANCE_VIOLATION`, 0 money moved (§3b). |
 | Does PayPal independently confirm a capture? | **Yes.** `GET /v2/checkout/orders/6DB70558VY7613132` (debug `f814102f85860`) and `GET /v2/payments/captures/0X564302AP931181C` (debug `f22969340ead4`) both report COMPLETED for 40.62 USD. Evidence: `docs/evidence/sandbox-purchase-manual-buyer.json`. |
-| Was live Claude tested? | **No.** `ANTHROPIC_API_KEY` is not set; 7 live Claude tests (extraction, injection, mismatch and over-budget explanations, comparison intro, planted review, real timeout) skipped. Fallback paths were tested through the real SDK against a local fake server (AUTO). |
+| Was live Claude tested? | **Yes, on 2026-10-29**, with a real Anthropic API key (`claude-opus-5-5`). The owner created the key; it was written into both `.env.local` files by the clipboard helper and never printed. `npm run test:live`: **18/18 pass**, twice in a row.
+- **The 7 Claude tests:** demo request understood; injection in the request ignored; mismatch explanation; planted-review injection kept out; comparison intro names only real products; over-budget explanation; real timeout falls back to the rules.
+- **Two defects found and fixed** (§3d): the validator rejected the correct "No payment has been made", and the planted-$5 check matched the real "$5.99" shipping.
+- **The interface with live Claude:** `E2E_LIVE_AI=1 npm run test:e2e` gives 40 pass, 7 skipped. Spikes 26/26. |
 | Was real assistive-technology testing performed? | **No.** No VoiceOver/NVDA/Voice Control/Switch Control session and no testing with disabled users. Chrome's accessibility tree was inspected automatically. |
 | Real money? | None possible: PayPal base URL hard-coded to sandbox; enforced by a unit test. |
 
@@ -156,6 +159,22 @@ Earlier manual script order `946825133C0963026` was never approved; it timed out
 - It shows "Payment complete: $40.62", focused, and "How this payment was checked".
 - It shows order `6DB70558VY7613132`, capture `0X564302AP931181C` and "PayPal Sandbox (test money only)".
 - No email, name or address appears. The original database's WAL was unchanged afterwards.
+
+### 3d. Live Claude (2026-10-29)
+
+**First real run:** 15 of 18 pass, with 3 Claude explanation tests failing. Two causes, both ours, not the model's:
+1. **Validator false positive.** `PAYMENT_CLAIM` matched "…$2.64 for tax. **No payment has been made**", a correct reassurance, so the explanation fell back to the rules text. It reproduced in 1 of 5 runs, so it's intermittent.
+   - **Fix:** a claim phrase directly after no/not/nothing/never is allowed. "No problem, payment has been made" is still rejected.
+   - **Unit test:** fails on the old validator and passes now.
+   - **Logging:** the fallback log now names the matched phrase with about 30 characters of context. That's model text only, never the request or the key.
+2. **Test bug.** The planted-review check `/\$5(\.00)?\b/` matched the real "$5.99 shipping". Claude's actual text was "That includes the charger at $38.99, $5.99 shipping and $3.22 tax… Nothing has been paid."
+   - **Fix:** now `/\$5(?:\.00)?(?!\.?\d)/`, which matches $5, $5. and $5.00 but not $5.99 or $50. The same fix applies in `spikes/test/ai.live.test.ts`.
+
+**Browser suite:** it now runs on the rules text by default, because it checks exact text and runs axe on it. `E2E_LIVE_AI=1` drives the interface with live Claude, and the accessibility-tree test then checks Claude's description for the facts (Lightning, USB-C). Both modes give 40 pass and 7 skipped.
+
+**After the fixes:** `npm run test:live` 18/18 twice. Spikes 26/26. Unit 85/85.
+
+**Not tested:** Claude under load or rate limiting, and the cost of a full judging period. The fallback covers both.
 
 ### 3b. Real buyer approvals refused at capture: COMPLIANCE_VIOLATION (2026-10-25)
 

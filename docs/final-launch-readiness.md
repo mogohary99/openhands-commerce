@@ -60,7 +60,9 @@ Everything below was done locally. Nothing has been pushed, deployed, subscribed
 
 ## 4. Real Claude API
 
-**BLOCKED** (rechecked 2026-10-29: the key is empty in both files and in the shell). The exact setup steps, with a clipboard helper so no file editing is needed, are in `release-checklist.md` P2.
+**VERIFIED on 2026-10-29.** `npm run test:live` 18/18 twice, and the interface works with live Claude. Two fixes are described in `qa-report.md` §3d.
+
+**Earlier:** BLOCKED (the key was empty). The exact setup steps, with a clipboard helper so no file editing is needed, are in `release-checklist.md` P2.
 
 **Earlier:**
 - `ANTHROPIC_API_KEY` is empty in `web/.env.local` and in the shell. No other authorized AI provider is configured, and none was substituted.

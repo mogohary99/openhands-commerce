@@ -21,7 +21,10 @@
 
 ## P2: live AI, or an explicit rules-only decision
 
-- [ ] **Owner:** an Anthropic API key, or the decision to run rules-only. As of 2026-10-29 the key is empty in both `.env.local` files and in the shell. A Claude Code subscription doesn't count.
+- [x] (2026-10-29) The owner created an Anthropic API key; it's configured in both files and never printed. `npm run test:live` 18/18 twice, and the interface works with live Claude (40/40 browser tests with `E2E_LIVE_AI=1`). Fixes: `qa-report.md` §3d.
+- [ ] **Owner:** in the Anthropic Console, set a monthly spend limit, and add the same key in Render before deploying.
+- [ ] **Decide:** keep the 2:16 video on rules text (what was filmed, with the narration to match), or re-record scenes 1, 2 and 4 with live Claude so the badge says "Written by Claude". The narration must match the badge either way.
+- ~~Owner: an Anthropic API key, or the decision to run rules-only. As of 2026-10-29 the key is empty in both `.env.local` files and in the shell.~~ A Claude Code subscription doesn't count.
   1. Sign in at https://console.anthropic.com. Check Plans & Billing: you need prepaid API credit, and $5 is plenty for the tests. Adding credit is your decision; I don't touch billing.
   2. Go to API keys → Create key. Name it `openhands-commerce-hackathon` and pick your default workspace.
   3. Tell me first, so I can start the clipboard helper. Then click **Copy** on the new key. The helper:
