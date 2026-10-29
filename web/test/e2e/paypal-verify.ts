@@ -101,13 +101,21 @@ export async function verifyCapturedPurchase(page: Page, token: string, mode: "a
   await expect(page.locator("#review-title")).toHaveText("Your order is empty"); // purchased cart is closed
 
   // Repeating the capture at PayPal: the app's own request id returns the same capture
-  // (idempotent replay); a fresh request id is refused as already captured.
+  // (idempotent replay); a fresh request id must not create a second capture. PayPal either
+  // refuses it (422 ORDER_ALREADY_CAPTURED) or, as seen live on 2026-10-29 (order
+  // 6DB70558VY7613132), answers 201 with the already-completed order. Both are safe only
+  // if the original capture is still the only one, which is asserted here and below.
   const replay = await paypalCapture(token, uuidv5(`capture:${token}`));
   expect([200, 201]).toContain(replay.status);
   expect(replay.body.purchase_units[0].payments.captures[0].id).toBe(captureId);
   const fresh = await paypalCapture(token, crypto.randomUUID());
-  expect(fresh.status).toBe(422);
-  expect(fresh.body.details?.[0]?.issue).toBe("ORDER_ALREADY_CAPTURED");
+  if (fresh.status === 422) {
+    expect(fresh.body.details?.[0]?.issue).toBe("ORDER_ALREADY_CAPTURED");
+  } else {
+    expect([200, 201]).toContain(fresh.status);
+    expect(fresh.body.status).toBe("COMPLETED");
+    expect(fresh.body.purchase_units[0].payments.captures.map((c: { id: string }) => c.id)).toEqual([captureId]);
+  }
 
   const final = await paypalGetOrder(token);
   expect(final.body.status).toBe("COMPLETED");
@@ -128,7 +136,7 @@ export async function verifyCapturedPurchase(page: Page, token: string, mode: "a
     capturesAfterReplays: final.body.purchase_units[0].payments.captures.length,
     receiptReloadAndReturnReplays: "receipt unchanged, no second capture",
     sameRequestIdReplay: { status: replay.status, captureId: replay.body.purchase_units[0].payments.captures[0].id },
-    freshRequestIdCapture: { status: fresh.status, issue: fresh.body.details?.[0]?.issue },
+    freshRequestIdCapture: { status: fresh.status, issue: fresh.body.details?.[0]?.issue ?? null, captureIds: fresh.body.purchase_units?.[0]?.payments?.captures?.map((c: { id: string }) => c.id) ?? null },
     debugIdOfFreshCapture: fresh.body.debug_id ?? null,
   };
   const dir = path.resolve("../docs/evidence");
