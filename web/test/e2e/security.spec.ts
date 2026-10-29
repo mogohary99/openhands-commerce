@@ -49,6 +49,15 @@ test("webhook endpoint throttles bursts with 429 and Retry-After", async ({ requ
   expect(retryAfter).toBe("60");
 });
 
+test("a server-wide webhook ceiling holds even with a made-up X-Forwarded-For on every request", async ({ request }) => {
+  let limited = false;
+  for (let i = 0; i < 700 && !limited; i++) {
+    const r = await request.post("/api/paypal/webhook", { data: "{}", headers: { "x-forwarded-for": `198.51.${i >> 8}.${i & 255}` } });
+    limited = r.status() === 429;
+  }
+  expect(limited).toBe(true);
+});
+
 // CSRF: Server Actions check that Origin matches the host. Proven both ways with the same
 // form fields, so the test can't pass just because the request was malformed.
 test("a cross-site form post to a Server Action is refused; the same post from our origin works", async ({ page }) => {

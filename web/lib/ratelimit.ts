@@ -13,6 +13,9 @@ export const LIMITS = {
   approve: { max: 10, windowMs: 60_000 }, // each approval may create a PayPal order
   paypalReturn: { max: 20, windowMs: 60_000 },
   webhook: { max: 120, windowMs: 60_000 },
+  // One server-wide budget for uncached Claude calls, whatever the client address claims to be.
+  // Over it, every AI job uses its rule-based fallback, so the store keeps working.
+  ai: { max: Number(process.env.AI_MAX_CALLS_PER_HOUR) || 120, windowMs: 3_600_000 },
 } satisfies Record<string, Limit>;
 
 export type LimitName = keyof typeof LIMITS;

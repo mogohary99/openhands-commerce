@@ -1,92 +1,55 @@
 # Release checklist, in priority order
 
-**Status on 2026-10-29: NOT submission-ready.** A verified capture now exists (P1). Still missing: live AI, a screen-reader pass, a hosted demo and the final video.
+**Status on 2026-10-29 (evening):** the code, tests, payment evidence, live Claude, VoiceOver passes and the silent video master are done. **Still missing, and each needs the owner:** hosting, a judge buyer, narration, and the publishing approvals.
 
-**Deadline:** Nov 12, 12:00 pm PT. **Target:** submit Nov 10–11. Nothing can change after the deadline. Each gate lists the evidence that closes it; "done" without that evidence doesn't count.
+**Deadline:** Nov 12, 12:00 pm PT. Nothing can change after it.
+- **Early check:** Devpost's Oct 28 update says submissions made by **Thu Nov 5** get an early eligibility check, and can still be edited until the deadline.
+- **Target:** submit by Nov 5 with whatever is verified, then update.
 
-## P1: a real payment capture (blocks the video, Devpost and hosting smoke test)
+## Done (evidence in `qa-report.md`)
 
-- [ ] **Owner:** in developer.paypal.com → Sandbox accounts, create a **personal** and a **business** account with country **United States**.
-  - Why: two real approvals from the current Egypt-country sandbox accounts were refused with `COMPLIANCE_VIOLATION` (`qa-report.md` §3b).
-- [x] **Owner (2026-10-26):** created US sandbox personal and business accounts and a new app.
-- [x] (2026-10-29) New app keys configured in both files; merchant differs from the old one. ~~**Owner:** get the new app's keys into the project. They still aren't in `web/.env.local` or `spikes/.env.local`: on 2026-10-29 the project still used `APP-1EV4688594317942R`. A clipboard helper on this Mac (run by Claude) writes both files and refuses the old app; the owner only clicks Copy for the Client ID and the Secret.~~
-  - This also rotates the secret exposed in chat.
-  - Then delete the old app's secret, or the whole old app.
-- [x] `npm run build && npm run test:live` with the new keys: 11 pass, 7 skipped (Claude).
-- [x] **Owner (2026-10-29):** logged in as the US personal account and pressed Pay. Order `6DB70558VY7613132`.
-- [x] **Evidence:** written by hand from PayPal's GET responses: COMPLETED, 40.62 USD, 1 capture. A fresh request id got 201, not 422; still 1 capture. ~~The original target: `COMPLETED`, 40.62 USD, `capturesAfterReplays: 1`, a same-id replay returning the same capture, and a fresh id getting 422 `ORDER_ALREADY_CAPTURED`.~~
-- [ ] Re-run `purchase:manual` once with the corrected fresh-id assertion, so the evidence file is written by the test itself. Optional, and it needs one more owner approval. A screen recording during that run gives the video its payment footage.
-- [ ] If capture fails again: don't retry that order. Fill in the merchant ID in `docs/paypal-support-request.md`, add the new debug_id, and send it (owner).
-- [ ] I copy the order and capture ids into `qa-report.md` §1/§3a and into devpost.md.
+- [x] Real sandbox capture: order `6DB70558VY7613132`, capture `0X564302AP931181C`, COMPLETED, 40.62 USD, 1 capture (2026-10-29). Keep `docs/evidence/sandbox-purchase-manual-buyer.json`.
+- [x] Live Claude (`claude-opus-5-5`): 7/7 live tests. The interface works with live Claude.
+- [x] VoiceOver P0 passes in Safari and Chrome (run by Claude with the owner's permission; not a VoiceOver user). Two defects were fixed.
+- [x] The private GitHub repo `mogohary99/openhands-commerce`. The secret scan was clean, it builds independently from a fresh clone, and GitHub detects the Apache-2.0 licence.
+- [x] The silent video master at 2:31, with captions, the prompter and narration mixing; the YouTube text and thumbnail.
+- [x] Rate limits made resistant to a made-up `X-Forwarded-For`; an hourly Claude budget.
 
-## P2: live AI, or an explicit rules-only decision
+## Owner actions, in order
 
-- [x] (2026-10-29) The owner created an Anthropic API key; it's configured in both files and never printed. `npm run test:live` 18/18 twice, and the interface works with live Claude (40/40 browser tests with `E2E_LIVE_AI=1`). Fixes: `qa-report.md` §3d.
-- [ ] **Owner:** in the Anthropic Console, set a monthly spend limit, and add the same key in Render before deploying.
-- [ ] **Decide:** keep the 2:16 video on rules text (what was filmed, with the narration to match), or re-record scenes 1, 2 and 4 with live Claude so the badge says "Written by Claude". The narration must match the badge either way.
-- ~~Owner: an Anthropic API key, or the decision to run rules-only. As of 2026-10-29 the key is empty in both `.env.local` files and in the shell.~~ A Claude Code subscription doesn't count.
-  1. Sign in at https://console.anthropic.com. Check Plans & Billing: you need prepaid API credit, and $5 is plenty for the tests. Adding credit is your decision; I don't touch billing.
-  2. Go to API keys → Create key. Name it `openhands-commerce-hackathon` and pick your default workspace.
-  3. Tell me first, so I can start the clipboard helper. Then click **Copy** on the new key. The helper:
-     - checks it with the free `GET /v1/models` endpoint and confirms `claude-opus-5-5` is listed;
-     - backs up both files;
-     - writes `ANTHROPIC_API_KEY` into `web/.env.local` and `spikes/.env.local`.
+1. [ ] **Delete the old PayPal app** `APP-1EV4688594317942R` (its secret was exposed in chat).
+2. [ ] **Anthropic Console:** set a monthly spend limit (e.g. $20). The app's own cap is 120 uncached calls an hour.
+3. [ ] **Approve Render:**
+   - "Render Starter (512 MB, 0.5 CPU, Oregon) plus a 1 GB disk on a Hobby workspace. $7/month plus $0.25/GB-month, billed per second and invoiced monthly, until I delete it. About $11.30 to Dec 15."
+   - Then create the account, add the card, and give the Render GitHub app access to only `openhands-commerce`.
+   - Blueprint → enter the 3 secrets → tell me "Render is ready" and give me the URL. Steps: `final-launch-readiness.md` §3.
+4. [ ] **PayPal webhook:** after the URL exists, add it in the sandbox app and put the webhook ID into Render.
+5. [ ] **Judge buyer:** developer.paypal.com → Sandbox → Accounts → Create → Personal, **United States**. Keep the email and password for Devpost (it's a sandbox test login, not a secret of the project). Tell me when it's there; I'll check it reaches PayPal's login from the hosted site without paying.
+6. [ ] **Decide:** one hosted sandbox payment (test money) to prove the return URL, capture and a real webhook delivery end to end. Without it, those three stay NOT TESTED on the host. The local payment is already verified.
+7. [ ] **Narration:** follow `submission/youtube.md` → "Recording the narration" (about 10 minutes), then tell me. I'll check sync, levels and captions.
+8. [ ] **Approvals to publish, each separately:**
+   - make the repo public;
+   - upload the video to YouTube as Public;
+   - submit on Devpost (I fill the form; you press Submit).
 
-     It never shows or logs the key. Don't paste it into chat.
-  4. I then run `npm run test:live` (7 Claude tests, at a cost of a few cents) and the spikes.
-  5. **Before Dec 15:** add the same key in the Render dashboard, and set a monthly spend limit in the Console.
-- [ ] `npm run test:live` runs all 7 Claude tests: extraction, injection, mismatch and over-budget explanations, the comparison intro, the planted review, a real timeout. **Evidence:** 0 skipped, 0 failed.
-- [ ] If any fail, fix them or ship rules-only. The narration and Devpost wording must match what the badge on screen says.
+## After each owner step (me)
 
-## P3: accessibility
-
-- [x] Automated checks: keyboard, focus, live regions, axe light/dark on every step, receipt states, zoom/reflow, forced colours, reduced motion. Status: PASS.
-- [x] (2026-10-29) First VoiceOver pass in Safari, by Claude with the owner's permission: 10 of 13 P0 checks passed. Two fixes came out of it, each with a regression test:
-  - prices were read twice;
-  - the blocked-Approve message was dropped, so focus now returns to the problem, named "Problem 1: payment blocked. …".
-- [x] (2026-10-29 18:26 Safari, 18:43 Chrome) The P0 re-check passed for 5–11, and the receipt is understandable. The open minor issue is that the Chrome receipt sentence is split at bold words. ~~Re-run P0 in Safari and in Chrome with VoiceOver, to hear the new blocked-Approve behaviour (item 9) and the receipt (item 13). Claude runs it with a guard before every key, only when the owner says the Mac is free. Waiting for 10 idle minutes doesn't work: the screen locks first (seen 2026-10-29 17:40, run aborted cleanly). 12 (paying) stays NOT RUN.~~
-- [ ] **Owner:** VoiceOver P0 (`docs/accessibility/voiceover-checklist.md`, items 1–13) in Safari, then Chrome. Fill in the Result column, word for word.
-- [ ] I fix every P0 defect, add a regression test where possible, and rerun the suite.
-- [ ] **Optional (owner):** sessions with assistive-technology users (`docs/submission/usability-testing-script.md`). Claim only the sessions that happened.
-
-## P4: hosted demo
-
-- [ ] **Owner:** approve Render, about $11 (`docs/deployment.md` → "Approval checklist"), steps 1–5.
-- [ ] I deploy and confirm the health check: `ok`, `database: ok`, `paypal: sandbox-configured`, `webhooks: configured`, `baseUrl: https`.
-- [ ] Hosted smoke test: the signature flow, cancel ("Nothing was charged"), a real purchase verified with PayPal, a webhook delivery recorded once, a restart that keeps orders, and a first `db:backup`.
-- [ ] **Owner:** a US judge buyer account works from a private window on the hosted URL.
-
-## P5: final video
-
-- [x] (2026-10-29) Silent scenes 1–5, plus scene 6: the **real** receipt of the verified payment. Rough cut 2:16 (`npm run video:roughcut`), checked frame by frame at the seams.
-- [ ] Re-record scenes 1–5 on the final build if the UI changes. Scene 6 can't be re-made without a new payment, so keep the file.
-- [ ] Edit following `docs/submission/video-edit-plan.md`. The PayPal login and Pay stay a "NOT FILMED" card unless genuine footage exists. Optional: a recording of the business account's Activity page for that payment.
-- [ ] **Owner:** narration. Captions come from `video-captions.draft.srt`, re-timed. Add the transcript to `video-transcript.md`.
-- [ ] Check: under 3:00, 720p or 1080p, no clipping, no personal data on screen, and the badge matches the narration.
-- [ ] **Owner:** upload to YouTube as Public, but only after the go-ahead to submit.
+- After 3–4: run `HOSTED_URL=… npm run test:e2e`, restart and check persistence, `db:backup`, and record the results in `qa-report.md` §2.
+- After 7: rebuild `final.mp4` with the narration, listen-check levels (−14 LUFS) and cue sync, and check duration < 3:00.
+- Before publishing: run `npm run test:all`, `E2E_LIVE_AI=1 npm run test:e2e`, the spikes, `npm audit --omit=dev` and the secret scan again, and fill every Devpost bracket from verified results only.
 
 ## Judge access (recommended setup)
 
-- **Hosted demo plus a dedicated US sandbox personal buyer for judges.** Judges open the URL, log in at PayPal Sandbox with that buyer, and see a real sandbox capture. Its email and password go on Devpost.
-  - It's a test login, not a real PayPal account and not a project secret.
-  - **Owner:** create it in developer.paypal.com → Sandbox → Accounts (Personal, United States). Check it logs in before Dec 1.
-- **Running it locally:** "create your own free sandbox app" (`web/README.md` → "For judges"). **Recommended: don't publish any app keys.** If you would rather publish some, create a separate judge-only sandbox app and delete it after Dec 15. Never use `APP-7R312336N90066720`.
-- **AI for judges:** the hosted demo uses our Anthropic key, with a spend limit set. Local runs work without a key: they're rules-only, and the screen says so.
+- **Hosted demo plus a dedicated US sandbox personal buyer for judges.** Judges open the URL, log in at PayPal Sandbox with that buyer, and get a real sandbox capture (test money). Its email and password go in Devpost's testing instructions **only after the owner approves the disclosure**.
+- That buyer is separate from the merchant's REST app. Judges never see or need the app's Client ID or Secret.
+- No real money is possible: the PayPal base URL is hard-coded to sandbox, and a unit test enforces it.
+- **Running it locally:** "create your own free sandbox app" (`web/README.md` → "For judges"). **Don't publish any app keys.** Never use `APP-7R312336N90066720` for judges.
+- **AI for judges:** the hosted demo uses our Anthropic key behind the hourly cap and the Console spend limit. Local runs work without a key: they're rules-only, and the screen says so.
 
-## P6: publish and submit (each step needs owner approval)
+## Submission day run sheet
 
-**Run sheet for submission day, in order:**
-1. `npm run test:all` (and once more with `E2E_LIVE_AI=1`), plus the spikes; secret scan.
-2. Export the video and check it against `video-edit-plan.md` → "Checks before upload".
-3. Hosted health check and smoke test.
-4. Fill in the Devpost **[brackets]**.
-5. **Owner:** push the public repo.
-6. **Owner:** upload the video to YouTube as Public.
-7. **Owner:** submit, then check the page from a signed-out window.
-
-
-- [ ] Resolve every **[bracket]** in devpost.md, or delete the sentence. The disclosures must match `qa-report.md` §1.
-- [ ] Decide on judge credentials: publish keys for a judge-only sandbox app, or "create your own" (`web/README.md` → "For judges"). Never publish the project's own keys.
-- [ ] Secret scan (no hits in any file or any commit), then `npm run test:all` passes. Record the counts.
-- [ ] **Owner:** push the repo to GitHub as public, with the license shown in About.
-- [ ] **Owner:** submit on Devpost by Nov 11, then check the page from a signed-out window.
+1. `npm run test:all`, plus once with `E2E_LIVE_AI=1`, the spikes and the secret scan.
+2. `HOSTED_URL=… npm run test:e2e` and `/api/health`.
+3. Export the video and check it against `video-edit-plan.md` → "Checks before upload".
+4. Fill in the Devpost brackets. The disclosures must match `qa-report.md` §1.
+5. **Owner:** make the repo public, upload to YouTube, submit. Then check the Devpost page from a signed-out window.

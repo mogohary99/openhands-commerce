@@ -55,7 +55,7 @@ Use it to check pacing and to time the narration. **Never upload it.** Rebuild t
 
 ## Captions
 
-The draft is `video-captions.draft.srt`, timed to the table above. After editing:
+The draft is `video-captions.en.srt`, timed to the table above. After editing:
 - Re-time it to the final cut.
 - Adjust the cue text wherever your narration differs.
 - Copy the final text into `video-transcript.md`.

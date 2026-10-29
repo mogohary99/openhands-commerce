@@ -25,9 +25,11 @@ const int = (f: FormData, k: string) => {
 };
 
 // Limits apply per session and per client address, so a new cookie doesn't reset them.
-// The address limit is looser: several shoppers can share one network.
+// The address limit is looser: several shoppers can share one network. A server-wide ceiling
+// holds even when a client makes up a new address (X-Forwarded-For) for every request.
 async function allowed(name: LimitName, sid: string | null) {
   const ip = clientKey(await headers());
+  if (!limiter.take(name, "global", { ...LIMITS[name], max: LIMITS[name].max * 10 })) return false;
   if (!limiter.take(name, `ip:${ip}`, { ...LIMITS[name], max: LIMITS[name].max * 5 })) return false;
   return !sid || limiter.take(name, `sid:${sid}`);
 }

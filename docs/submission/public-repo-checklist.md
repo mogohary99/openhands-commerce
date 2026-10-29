@@ -1,11 +1,11 @@
 # Before making the repository public
 
-The rules require a public repo with an open-source license file. This is the pre-publication checklist; nothing has been pushed.
+The rules require a public repo with an open-source license file. This is the pre-publication checklist. Status on 2026-10-29: the repo is pushed as **PRIVATE** to `https://github.com/mogohary99/openhands-commerce` (owner-authorised). Making it public needs separate approval.
 
-| Step | Status (2026-10-24) |
+| Step | Status (2026-10-29) |
 |---|---|
 | `LICENSE` (Apache-2.0) at the repo root, matching `web/package.json` | done — GitHub detects it so it shows in the About section |
-| No secrets in tracked files or history | checked: the sandbox client secret is in 0 tracked files and 0 commits (re-check right before pushing: `git log -p --all \| grep -c <first 8 chars of secret>` → 0) |
+| No secrets in tracked files or history | checked 2026-10-29 before the private push: every secret-looking value from all local `.env*` files and backups (5 values) gave 0 hits across 144 tracked files and all 47 commits. Pattern scans also gave 0 hits. **Re-run right before going public** |
 | `.env*` ignored, only `.env.example` tracked (in `web/` and `spikes/`) | done |
 | **Rotate the PayPal sandbox secret** (it was pasted into a chat transcript) | **done 2026-10-29**: the project now uses the new app `APP-7R312336N90066720` (US business account). **Owner:** delete the old app `APP-1EV4688594317942R` in the dashboard, so the exposed secret stops working |
 | Anthropic API key | only in the git-ignored `.env.local` files and later in Render's environment; 0 hits in tracked files and history (scanned 2026-10-29) |
@@ -15,4 +15,7 @@ The rules require a public repo with an open-source license file. This is the pr
 | No personal data in commits beyond author name/email | author is the owner's git identity — confirm you're happy for it to be public |
 | Judge test credentials: a **dedicated** sandbox personal account, written in the Devpost testing instructions (and README if required) | owner — never a real PayPal login |
 | Brand/trademark check for the video and screenshots (connector names are descriptive; no logos used) | owner review |
-| Push to a new **public** GitHub repo | **owner approval required** |
+| Independent build | a fresh clone from GitHub passed production `npm ci`, the build, typecheck and unit tests (2026-10-29) |
+| All environment variables documented, without values | `web/.env.example` and `web/README.md` |
+| Architecture documentation | `docs/architecture.md`; summary in `submission/devpost.md` |
+| Change visibility to **public** (`gh repo edit mogohary99/openhands-commerce --visibility public --accept-visibility-change-consequences`) | **owner approval required** |

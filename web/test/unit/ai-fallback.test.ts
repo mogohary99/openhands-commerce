@@ -122,3 +122,15 @@ test("recommendation intro naming a product that isn't in the results is rejecte
 test("the fake server was actually called (the SDK path ran)", () => {
   assert.ok(hits >= 8, `hits=${hits}`);
 });
+
+test("over the server-wide hourly Claude budget → rules text, and the API is not called", async () => {
+  const { limiter, LIMITS } = await import("../../lib/ratelimit");
+  for (let i = 0; i < LIMITS.ai.max && limiter.take("ai", "global"); i++);
+  mode = "json";
+  const v = verifyCart(catalog, [{ variantId: "v-scale-talking-es", quantity: 2 }], { voiceLanguage: "en" });
+  jsonPayload = { headline: "Budget test.", points: [{ findingCode: "LANGUAGE_MISMATCH", text: "You asked for English. This one speaks Spanish." }], suggestedAction: "Switch." };
+  const before = hits;
+  const r = await ai.explainFindings(v.findings, v.quote, catalog);
+  assert.equal(r.source, "rules");
+  assert.equal(hits, before);
+});

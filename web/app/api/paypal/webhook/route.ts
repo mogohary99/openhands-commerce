@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { handleWebhook } from "@/lib/checkout";
-import { clientKey, limiter } from "@/lib/ratelimit";
+import { clientKey, LIMITS, limiter } from "@/lib/ratelimit";
 import { getDeps } from "@/lib/runtime";
 
 export const dynamic = "force-dynamic";
@@ -9,7 +9,9 @@ export const dynamic = "force-dynamic";
 // before it is read; without PAYPAL_WEBHOOK_ID configured, all events are rejected.
 export async function POST(req: Request) {
   // PayPal retries on non-2xx, so throttling a burst loses nothing.
-  if (!limiter.take("webhook", clientKey(req.headers))) return NextResponse.json({ message: "Too many requests" }, { status: 429, headers: { "Retry-After": "60" } });
+  // The server-wide ceiling also bounds signature-verification calls to PayPal when a client
+  // makes up a new X-Forwarded-For address for every request.
+  if (!limiter.take("webhook", "global", { ...LIMITS.webhook, max: LIMITS.webhook.max * 5 }) || !limiter.take("webhook", clientKey(req.headers))) return NextResponse.json({ message: "Too many requests" }, { status: 429, headers: { "Retry-After": "60" } });
   const raw = await req.text();
   if (raw.length > 256_000) return NextResponse.json({ message: "Too large" }, { status: 413 });
   const h = req.headers;

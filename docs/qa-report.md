@@ -1,6 +1,6 @@
 # Technical QA Report — OpenHands Commerce MVP
 
-_Run dates: 2026-10-23, updated 2026-10-24 and 2026-10-25 (local, macOS 26.2, Node 20.20.2, Chrome via Playwright 1.64.1). Latest results are from 2026-10-25 (§2, working tree after `eefc5a8`)._
+_Run dates: 2026-10-23 to 2026-10-29 (local, macOS 26.2, Node 20.20.2, Chrome via Playwright 1.64.1). The latest results are in §2, "Final gates, 2026-10-29 evening"._
 
 Legend: **LIVE** = real call to PayPal Sandbox / Anthropic. **AUTO** = automated, no external service. **MANUAL** = performed by a person. **NOT RUN** = not executed (reason given).
 
@@ -16,7 +16,7 @@ Legend: **LIVE** = real call to PayPal Sandbox / Anthropic. **AUTO** = automated
 - **The 7 Claude tests:** demo request understood; injection in the request ignored; mismatch explanation; planted-review injection kept out; comparison intro names only real products; over-budget explanation; real timeout falls back to the rules.
 - **Two defects found and fixed** (§3d): the validator rejected the correct "No payment has been made", and the planted-$5 check matched the real "$5.99" shipping.
 - **The interface with live Claude:** `E2E_LIVE_AI=1 npm run test:e2e` gives 40 pass, 7 skipped. Spikes 26/26. |
-| Was real assistive-technology testing performed? | **No.** No VoiceOver/NVDA/Voice Control/Switch Control session and no testing with disabled users. Chrome's accessibility tree was inspected automatically. |
+| Was real assistive-technology testing performed? | **VoiceOver, yes. Users, no.** VoiceOver on macOS was run in Safari and in Chrome on 2026-10-29, driven by Claude with the owner's permission, and read from VoiceOver's caption panel (§6a0, §6a). It passed after two fixes. It was not run by a VoiceOver user. NVDA, JAWS, TalkBack, Voice Control and Switch Control: none. No testing with disabled users. |
 | Real money? | None possible: PayPal base URL hard-coded to sandbox; enforced by a unit test. |
 
 ## 2. Commands and exact results (2026-10-25, `npm run test:all`, exit 1: see the E2E row)
@@ -31,6 +31,20 @@ Legend: **LIVE** = real call to PayPal Sandbox / Anthropic. **AUTO** = automated
 | `spikes: npm test` | 26 tests, 23 pass, 0 fail, 3 skipped (Claude key) |
 | `web: npm audit --omit=dev` | 0 vulnerabilities |
 | Secret in git history | 0 matches (all revisions) |
+
+**Final gates, 2026-10-29 evening (after the rate-limit and AI-budget change and the hosted suite): exit 0.**
+- `npm run test:all`: typecheck clean, build ok, unit **86/86**, live **18/18** (11 PayPal Sandbox + 7 Claude), browser **41 pass, 0 fail, 7 skipped**, 0 PayPal retries logged.
+  - The 7 skipped: the automated buyer purchase (no stored password, by design), `purchase:manual` (owner only), and 5 video-scene recordings (on demand).
+  - `hosted.spec.ts` runs only with `HOSTED_URL`.
+- `E2E_LIVE_AI=1 npm run test:e2e`: LIVEAI_RESULT.
+- Spikes: typecheck clean, **26/26**. `npm audit --omit=dev`: 0 vulnerabilities.
+- **Secret scan, before the private push:** every secret-looking value from all local `.env*` files, including backups (5 distinct values), was searched across 144 tracked files and the full history of 47 commits, with 0 hits. Pattern scans (Anthropic, PayPal secret-like, bearer, private key, GitHub and AWS tokens) also gave 0 hits.
+- **Independent build from GitHub:** a fresh `git clone` of the private repo at `ae6f9be`. Production `npm ci`, `npm run build` and typecheck succeeded, and unit tests passed 85/85.
+- **Hosted suite dry run, locally** (`HOSTED_URL=http://localhost:3400`, production build, live keys):
+  - **Pass:** the live-Claude badge; a real sandbox order created from the site; PayPal's own "Cancel and return" link coming back to our cancel URL with "Nothing was charged" and 0 captures; the phone-sized flow with axe.
+  - **Expected failures** (they need a real host): https, HSTS and Secure cookie, `webhooks: configured`.
+  - **Real finding:** the spoofed `X-Forwarded-For` weakness, now fixed (§5).
+- **Not tested** (no host yet): Render itself, its TLS and proxy, the disk across restarts, `db:backup` on the host, the hosted PayPal return URL and capture, and real webhook delivery.
 
 **Final QA gates, 2026-10-29 (commit after `7a544d8`, new sandbox app plus live Claude): all exit 0.**
 - `npm run test:all`: typecheck clean, build ok, unit **85/85**, live **18/18** (11 PayPal + 7 Claude), browser **40 pass, 0 fail, 7 skipped**.
@@ -280,6 +294,7 @@ Earlier manual script order `946825133C0963026` was never approved; it timed out
 | Headers | `X-Frame-Options: DENY`, `nosniff`, strict referrer, Permissions-Policy (verified with curl). |
 | Content-Security-Policy (added 2026-10-24) | Per-request nonce via `proxy.ts`: `script-src 'self' 'nonce-…' 'strict-dynamic'` (no `unsafe-eval` in production), `form-action 'self' https://www.sandbox.paypal.com`, `frame-ancestors 'none'`, `object-src 'none'`, `upgrade-insecure-requests` + HSTS only when `APP_BASE_URL` is https (decided at runtime). Inline **styles** stay allowed on purpose so shoppers' text-spacing/contrast tools keep working; CSS can't run script. `/api/*` gets `default-src 'none'`. E2E: header present, nonce rotates, zero CSP violations through the signature flow. |
 | Rate limits (added 2026-10-24) | In-process, per session and per address: search 20/min (each may call Claude), cart edits 60/min, approval 10/min (each may create a PayPal order), PayPal return 20/min, webhooks 120/min → 429 + `Retry-After`. Over-limit requests change nothing and say nothing was charged. Unit + E2E tested. |
+| Rate limits vs a made-up `X-Forwarded-For` (fixed 2026-10-29) | **Confirmed weakness, fixed.** `clientKey` trusts the first `X-Forwarded-For` entry. A local dry run of `hosted.spec.ts` showed that a client sending a new made-up address on every request was never limited (130 webhook posts, no 429). Whether Render overwrites that header is unverified: a Render forum answer and a user report disagree. **Fix:** server-wide ceilings on top of the per-address and per-session limits: search 200/min, cart 600/min, approval 100/min (each may create a PayPal order) and webhooks 600/min (each signed-looking event costs a PayPal verify call). Plus a server-wide **budget of 120 uncached Claude calls an hour** (`AI_MAX_CALLS_PER_HOUR`); above it, every AI job uses its rules text. **Tests:** a unit test shows that over the budget the API isn't called and the rules text is used; it fails without the guard, checked by removing it. An E2E test shows that 700 webhook posts with made-up addresses get a 429. The hosted spec checks Render's behaviour once deployed. |
 | Error logging (added 2026-10-24) | `instrumentation.ts`: one JSON line per server error, path without query string, no bodies/cookies/headers/tokens. |
 | Authorization | Anonymous shopping; every cart, order and receipt is bound to the session cookie and checked on each request (receipt of another session → 404). No accounts, so no passwords stored. |
 | Input validation | Zod/regex on every form field; PayPal tokens `^[A-Z0-9]{10,40}$`; webhook body ≤ 256 KB. |
@@ -348,15 +363,17 @@ No WCAG conformance claim is made. Automated checks catch a minority of issues; 
 | Receipt "How this payment was checked" | asserted in the live buyer test | **BLOCKED** (needs a real capture) |
 | Success-panel arrival cue is movement-only | axe caught a mid-fade contrast failure; fixed | AUTO |
 
-## 7. Remaining blockers (need the owner)
+## 7. Remaining blockers (need the owner), as of 2026-10-29 evening
 
-1. **Sandbox buyer login** → add `PAYPAL_SANDBOX_BUYER_EMAIL` / `PAYPAL_SANDBOX_BUYER_PASSWORD` to `web/.env.local` (developer.paypal.com → Testing Tools → Sandbox Accounts → the *Personal* account → ⋯ → View/Edit → copy email and password). The dashboard login required a CAPTCHA, which we do not solve. Then `cd web && npm run build && npm run test:e2e`.
-2. **`ANTHROPIC_API_KEY`** → `npm run test:live`.
-3. **Rotate the sandbox client secret** (§5).
-4. **Manual AT testing** → VoiceOver (enable it yourself: ⌘F5) with the checklist in `docs/demo-checklist.md`; recruit AT users.
-5. **Webhooks** need a hosted HTTPS URL + `PAYPAL_WEBHOOK_ID` (hosting is held until you approve deployment).
-
-Status 2026-10-24: blockers 1–5 unchanged. Re-checked: buyer and Anthropic keys still empty; the developer dashboard asks for the owner's Face ID / Touch ID login.
+The earlier list (buyer login, Anthropic key, rotation, VoiceOver) is resolved; its history is in git. What's open now, in order, is in `docs/release-checklist.md` → "Owner actions":
+- delete the old PayPal app;
+- set an Anthropic spend limit;
+- approve Render, then the account, GitHub app access and secrets;
+- the PayPal webhook ID;
+- the judges' US sandbox buyer;
+- whether to make one hosted sandbox payment;
+- narration;
+- the approvals to publish (repo, YouTube, Devpost).
 
 ## 8. Known limitations (not bugs)
 

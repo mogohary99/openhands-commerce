@@ -6,6 +6,7 @@ import { z } from "zod";
 import type { Catalog } from "./catalog";
 import { type ConstraintSource, parseShoppingFor, type ShoppingFor } from "./constraints";
 import { checkGeneratedText, deterministicExplanation, type Explanation, ExplanationSchema, validateExplanation } from "./explain";
+import { limiter } from "./ratelimit";
 import type { Recommendation } from "./recommend";
 import type { Finding, Quote } from "./verify";
 
@@ -30,6 +31,7 @@ let client: Anthropic | undefined;
 const getClient = () => (client ??= new Anthropic({ maxRetries: 1, timeout: TIMEOUT_MS }));
 
 async function parse<T extends z.ZodType>(schema: T, user: string, maxTokens: number): Promise<z.infer<T>> {
+  if (!limiter.take("ai", "global")) throw new Error("Hourly Claude call budget reached");
   const res = await getClient().beta.messages.parse({
     model: MODEL,
     max_tokens: maxTokens,

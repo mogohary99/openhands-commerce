@@ -17,7 +17,7 @@ npm run build && npm start   # http://localhost:3000
 
 Run `npm run build` before `npm run test:e2e`.
 
-Environment variables: `PAYPAL_CLIENT_ID`, `PAYPAL_CLIENT_SECRET` (sandbox), `PAYPAL_WEBHOOK_ID` (webhook endpoint rejects all events without it), `ANTHROPIC_API_KEY` (optional; without it the app uses rule-based understanding and says so on screen), `APP_BASE_URL`, and for the live buyer E2E only `PAYPAL_SANDBOX_BUYER_EMAIL` / `PAYPAL_SANDBOX_BUYER_PASSWORD`. `/api/health` reports which are configured, never their values.
+Environment variables: `PAYPAL_CLIENT_ID`, `PAYPAL_CLIENT_SECRET` (sandbox), `PAYPAL_WEBHOOK_ID` (webhook endpoint rejects all events without it), `ANTHROPIC_API_KEY` (optional; without it the app uses rule-based understanding and says so on screen), `APP_BASE_URL`, `DATABASE_PATH` (SQLite file; hosted: on the persistent disk), `AI_TIMEOUT_MS` (default 12000), `AI_MAX_CALLS_PER_HOUR` (server-wide Claude budget, default 120; above it the rules text is used), and for the live buyer E2E only `PAYPAL_SANDBOX_BUYER_EMAIL` / `PAYPAL_SANDBOX_BUYER_PASSWORD`. All are listed in `.env.example`. To run the browser suite against a deployed site: `HOSTED_URL=https://… npm run test:e2e`. `/api/health` reports which are configured, never their values.
 
 Payment flow: Approve (server re-verifies, quote-hash bound) → PayPal order created from the server quote (`PayPal-Request-Id` = UUIDv5 of cart+quote) → shopper approves on PayPal (full-page redirect) → `/checkout/return` re-checks status `APPROVED`, amount, `custom_id`, and the live catalog → capture (idempotent request id) → receipt only if capture status is `COMPLETED` with the approved amount.
 

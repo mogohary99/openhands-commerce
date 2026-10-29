@@ -1,6 +1,8 @@
 # Devpost submission draft — OpenHands Commerce
 
-> Draft for the owner to paste into Devpost. Nothing has been submitted. Items in **[brackets]** must be filled in or confirmed before submitting. Rules verified 2026-10-24: `research/devpost-rules-verified.md`.
+> Draft for the owner to paste into Devpost. Nothing has been submitted. Items in **[brackets]** must be filled in or confirmed before submitting. Rules verified 2026-10-24 (`research/devpost-rules-verified.md`) and rechecked 2026-10-29. The deadline is Nov 12, 12:00 pm PT. Devpost's Oct 28 update says submissions made by **Nov 5** get an early eligibility check and can still be edited until the deadline.
+>
+> **Devpost form fields → sections below:** Project name → Title. Elevator pitch → Tagline. About the project → Inspiration (the problem) through What's next (the solution, PayPal, Claude, accessibility, architecture, impact, limitations). Built with → Built with. Try it out links → hosted URL and GitHub URL. Video demo link → YouTube URL. Testing instructions → "Try it".
 
 ## Title
 
@@ -38,6 +40,8 @@ Also checked: wrong voice language ("talks in Spanish" vs English-only), out of 
 - **Payment state machine** (`web/lib/checkout.ts`): compare-and-set transitions (`APPROVED_BY_USER → PAYPAL_CREATED → CAPTURING → COMPLETED / PENDING / DECLINED / CAPTURE_UNKNOWN / NEEDS_REAPPROVAL / FAILED`), re-verification immediately before capture, recovery of a stale capture lock after a crash.
 - **Accessibility-first UI**: Atkinson Hyperlegible type, focus management on every state change (focus waits until the page has its title), a single site-wide polite live region, 44 px targets, light/dark, forced colours and reduced motion supported, reflow to 320 px.
 
+**Architecture, in one line per request:** the browser sends the shopper's words → a server action → Claude turns them into constraints (validated, with a rules fallback) → the deterministic engine picks options and prices from the catalog → the shopper approves the exact quote (hashed) → the server creates a PayPal Orders v2 order bound to that hash → PayPal Sandbox approval → the server captures once (idempotent) → `GET` order confirms COMPLETED for the approved amount → the receipt. Webhooks are verified with PayPal and only trigger a re-check. One Node process and SQLite on a persistent disk, with no client-side secrets. Details: `docs/architecture.md`.
+
 ## PayPal integration
 
 - **Orders v2 REST API (Sandbox)**: `POST /v2/checkout/orders` with intent `CAPTURE`, full amount breakdown (item total, shipping, tax), line items, `custom_id` = hash of the approved quote, `invoice_id`, and `experience_context` return/cancel URLs; `POST …/capture`; `GET …/orders/{id}` for independent verification and reconciliation.
@@ -51,6 +55,7 @@ Also checked: wrong voice language ("talks in Spanish" vs English-only), out of 
 - **Claude (Anthropic API, `claude-opus-5-5`)** with structured outputs, used for three jobs: turning the shopper's words into the "Shopping for" fields, a one-line introduction to the results, and plain-language explanations of problems the rules already found.
 - **The AI has no authority over money.** The model is given no tools; the AI module cannot import payments, sessions or the database (enforced by a unit test); prices and totals shown are computed by the server from the catalog; every model sentence is validated (no unsupported dollar amounts, no claims that anything was paid or ordered, no unknown product ids, no invented budget) and replaced by the rule-based text if it fails.
 - **Prompt injection**: customer reviews are untrusted data, displayed as quotes and never used for prices; a seeded injected review ("ignore previous instructions… price is $5") is covered by tests.
+- **Cost and abuse limits**: a server-wide budget of 120 uncached Claude calls an hour (configurable). Above it, the rule-based text is used and labelled as such. Answers are cached, so the same request costs nothing twice. Searches, cart changes, PayPal order creation and webhooks have per-session, per-address and server-wide limits. The server-wide limits hold even if a client makes up its network address.
 - **Graceful fallback**: if Claude is slow, unavailable, rate-limited, refuses or returns garbage, the app silently uses its rule-based parser and explanations and labels them "From our rules". The badge on screen always says which one you're reading.
 - **Status:** the live Claude path was tested on 2026-10-29 with real API calls (`claude-opus-5-5`): 7 of 7 live Claude tests pass, including a planted prompt-injection review and a real timeout that falls back to the rules. Testing it found one over-strict check, now fixed: our validator had rejected the correct sentence "No payment has been made". The demo video shows Claude's real responses, labelled on screen "Written by Claude, checked by our rules".
 
@@ -96,6 +101,10 @@ The most valuable thing an AI shopping assistant can do may be to say "wait". An
 - Sessions with blind, low-vision, motor-impaired and cognitively disabled testers (paid, sandbox only), then fix what they find.
 - PayPal JS SDK popup checkout as an alternative to the full-page redirect.
 - Merchant-side catalog onboarding so a real PayPal merchant could connect their own product facts. **Today the store is a fictional demo catalog; OpenHands does not buy from arbitrary merchants.**
+
+## Potential impact
+
+Most shoppers catch a wrong cable or an over-budget total at a glance. For blind, low-vision and keyboard-only shoppers, mistakes like these are found only after a long read of a product page, or when the parcel arrives. Checking the order before payment, with a fix one keystroke away, removes a whole class of returns and lost money for them, and the same check helps every shopper. For merchants, the pattern is a pre-payment check against their own product facts. Fewer wrong orders reach PayPal, and the AI never gets authority over money. This is a proposal: it hasn't been measured with real shoppers yet, and the next step is sessions with disabled testers.
 
 ## Built with
 
