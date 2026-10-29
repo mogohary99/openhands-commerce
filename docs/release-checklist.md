@@ -8,7 +8,8 @@
 
 - [ ] **Owner:** in developer.paypal.com → Sandbox accounts, create a **personal** and a **business** account with country **United States**.
   - Why: two real approvals from the current Egypt-country sandbox accounts were refused with `COMPLIANCE_VIOLATION` (`qa-report.md` §3b).
-- [ ] **Owner:** create a sandbox REST app under the new US business account, and put its keys in `web/.env.local` and `spikes/.env.local`.
+- [x] **Owner (2026-10-26):** created US sandbox personal and business accounts and a new app.
+- [ ] **Owner:** get the new app's keys into the project. They still aren't in `web/.env.local` or `spikes/.env.local`: on 2026-10-29 the project still used `APP-1EV4688594317942R`. A clipboard helper on this Mac (run by Claude) writes both files and refuses the old app; the owner only clicks Copy for the Client ID and the Secret.
   - This also rotates the secret exposed in chat.
   - Then delete the old app's secret, or the whole old app.
 - [ ] `cd web && npm run build && npm run test:live`: the PayPal tests pass with the new keys.
