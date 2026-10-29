@@ -29,6 +29,8 @@ Legend: **LIVE** = real call to PayPal Sandbox / Anthropic. **AUTO** = automated
 | `web: npm audit --omit=dev` | 0 vulnerabilities |
 | Secret in git history | 0 matches (all revisions) |
 
+**Full run 2026-10-29, later (new app `APP-7R312336N90066720`, after the verified purchase and the fresh-id test correction, commit `2117d0d`): exit 0.** Typecheck clean, build ok. Unit **84/84**. Live: 11 pass, 0 fail, 7 skipped (no Anthropic key). E2E: 46 tests, **39 pass, 0 fail, 7 skipped** (buyer purchase, manual purchase, 5 video recordings), no retries logged. Spikes: 23 pass, 0 fail, 3 skipped. `npm audit --omit=dev`: 0 vulnerabilities. Secret scan (old and new PayPal keys, all files and all history): 0 hits.
+
 **Full run 2026-10-29 (commit `033a42d`, still the old sandbox app `APP-1EV4688594317942R`): exit 0.** Typecheck clean, build ok. Unit **84/84**. Live: 11 pass, 0 fail, 7 skipped (no Anthropic key). E2E: 46 tests, **39 pass, 0 fail, 7 skipped** (buyer purchase, manual purchase, 5 video recordings), no retries logged. Spikes: 23 pass, 0 fail, 3 skipped. `npm audit --omit=dev`: 0 vulnerabilities.
 
 **Earlier full run (2026-10-25, after the COMPLIANCE_VIOLATION fix and the test-side retry change): exit 0.** Unit **83/83** (84/84 after the DECLINED-capture fix, see §3b). Live: 11 pass, 7 skipped (no Anthropic key). E2E: **46 tests, 39 pass, 0 fail, 7 skipped**, and no `[paypal-sandbox]` retries logged. Spikes: 23 pass, 3 skipped. Audit: 0 vulnerabilities. The table above is the earlier 2026-10-25 run with the sandbox connect timeout.
