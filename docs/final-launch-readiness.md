@@ -60,7 +60,9 @@ Everything below was done locally. Nothing has been pushed, deployed, subscribed
 
 ## 4. Real Claude API
 
-**BLOCKED.**
+**BLOCKED** (rechecked 2026-10-29: the key is empty in both files and in the shell). The exact setup steps, with a clipboard helper so no file editing is needed, are in `release-checklist.md` P2.
+
+**Earlier:**
 - `ANTHROPIC_API_KEY` is empty in `web/.env.local` and in the shell. No other authorized AI provider is configured, and none was substituted.
 - A Claude Code subscription doesn't give this app API access.
 - **Needed:** an Anthropic API key from console.anthropic.com, on an account with API credit. The app uses `claude-opus-5-5` (`web/lib/ai.ts`).
@@ -92,7 +94,12 @@ The rollback steps are in `docs/deployment.md`. **This is the one approval I nee
 
 ## 7. Video
 
-**NOT DONE.**
+**NOT DONE**, but the rough cut is complete except for narration (2026-10-29).
+- **The cut:** 2:16. The receipt section is now the **real** receipt of the verified payment (scene 6).
+- **PayPal login and Pay:** an honest "NOT FILMED" card, because that purchase wasn't screen-recorded.
+- **Still missing:** narration, the final diagram and title cards, and the export.
+
+**Earlier status:**
 
 | | Scenes |
 |---|---|

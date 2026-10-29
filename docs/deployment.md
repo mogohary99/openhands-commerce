@@ -2,6 +2,13 @@
 
 Nothing has been deployed or published. Going live needs the owner's explicit approval, and the hackathon rules require the demo to stay up and free until **Dec 15, 2026, 8:00 am PT** (`research/devpost-rules-verified.md`).
 
+**Pricing rechecked on 2026-10-29** from render.com/pricing (raw page):
+- **Plans:** the Hobby workspace is "$0 /mo + compute", and the Starter web service is "$7/month" (512 MB RAM, 0.5 CPU).
+- **Disk:** persistent disks cost "$0.25 per GB per month". Render's docs say disks need a paid service.
+- **Billing:** "billing is prorated to the second". Free web services have no persistent disk and spin down after 15 idle minutes.
+- **Estimate:** Nov 1 – Dec 15 (about 1.47 months) × $7.25 ≈ **$10.60**, unchanged from the Oct 24 estimate of about $11.
+- **The approval:** this still needs your approval and your card.
+
 ## Options compared (2026-10-24, prices from official pages; full table and sources: `research/hosting-options-2026-10.md`)
 
 The app needs one always-on Node process, a disk that survives restarts and deploys (SQLite), HTTPS and an inbound webhook, publicly available and free for judges until **Dec 15, 2026, 8:00 am PT**. Cost estimates cover Nov 1 – Dec 15.

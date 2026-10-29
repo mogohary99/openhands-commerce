@@ -132,6 +132,27 @@ Earlier manual script order `946825133C0963026` was never approved; it timed out
   - **The corrected assertion hasn't run against PayPal yet.** It needs another buyer approval. Until then the test's status is NOT RE-RUN.
 - **Evidence:** `docs/evidence/sandbox-purchase-manual-buyer.json`, written by hand from PayPal's API responses, because the test stopped before writing it.
 
+**Follow-up on the fresh-request-id result (2026-10-29, read-only checks only; no new capture or payment).** The owner decided this verified capture is the payment milestone. No payment will be made just to re-run the assertion.
+- **PayPal's docs:** the Orders v2 error reference says "If 'intent=CAPTURE' only one capture per order is allowed". The idempotency guide says a repeated `PayPal-Request-Id` returns the original result. Neither says a *new* request id on a completed order must get 422. So the old test's assumption had no documented basis, and the observed 201 doesn't contradict PayPal.
+- **The app's own record** (read-only, `web/.data/e2e.sqlite`):
+  - order state COMPLETED;
+  - capture `0X564302AP931181C`, COMPLETED, 4062 cents;
+  - verified at 2026-10-29T10:56:15.827Z;
+  - debug id of the app's capture call: `f87983821dc72`.
+- **The audit trail for that order:**
+  1. `approval.recorded` and `paypal.order_created`;
+  2. two `paypal.cancelled_by_shopper`, each followed by `approval.reused_paypal_order`: the owner cancelled at PayPal twice, and each re-approval **reused the same PayPal order** rather than creating a new one;
+  3. exactly **one** `capture.completed`.
+
+  The receipt reloads and return-URL replays added no capture events.
+- **PayPal's own record:** a GET made after the test (and after its fresh-id call) shows exactly one capture.
+- **Status of the corrected assertion:** typechecked. It runs only inside a real purchase, so it is **NOT RE-RUN**, by the owner's decision.
+
+#**Receipt footage (2026-10-29):** the receipt for that order was reopened from a *copy* of the app's database (`next start` on port 3400) and recorded as `docs/video/scenes/6-receipt-verified.mp4`.
+- It shows "Payment complete: $40.62", focused, and "How this payment was checked".
+- It shows order `6DB70558VY7613132`, capture `0X564302AP931181C` and "PayPal Sandbox (test money only)".
+- No email, name or address appears. The original database's WAL was unchanged afterwards.
+
 ### 3b. Real buyer approvals refused at capture: COMPLIANCE_VIOLATION (2026-10-25)
 
 **What happened.** The owner ran `npm run purchase:manual`, logged in at PayPal Sandbox and approved.

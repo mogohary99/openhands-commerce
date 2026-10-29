@@ -21,13 +21,24 @@
 
 ## P2: live AI, or an explicit rules-only decision
 
-- [ ] **Owner:** add `ANTHROPIC_API_KEY` (from console.anthropic.com, with API credit) to `web/.env.local`, or decide on rules-only.
+- [ ] **Owner:** an Anthropic API key, or the decision to run rules-only. As of 2026-10-29 the key is empty in both `.env.local` files and in the shell. A Claude Code subscription doesn't count.
+  1. Sign in at https://console.anthropic.com. Check Plans & Billing: you need prepaid API credit, and $5 is plenty for the tests. Adding credit is your decision; I don't touch billing.
+  2. Go to API keys → Create key. Name it `openhands-commerce-hackathon` and pick your default workspace.
+  3. Tell me first, so I can start the clipboard helper. Then click **Copy** on the new key. The helper:
+     - checks it with the free `GET /v1/models` endpoint and confirms `claude-opus-5-5` is listed;
+     - backs up both files;
+     - writes `ANTHROPIC_API_KEY` into `web/.env.local` and `spikes/.env.local`.
+
+     It never shows or logs the key. Don't paste it into chat.
+  4. I then run `npm run test:live` (7 Claude tests, at a cost of a few cents) and the spikes.
+  5. **Before Dec 15:** add the same key in the Render dashboard, and set a monthly spend limit in the Console.
 - [ ] `npm run test:live` runs all 7 Claude tests: extraction, injection, mismatch and over-budget explanations, the comparison intro, the planted review, a real timeout. **Evidence:** 0 skipped, 0 failed.
 - [ ] If any fail, fix them or ship rules-only. The narration and Devpost wording must match what the badge on screen says.
 
 ## P3: accessibility
 
 - [x] Automated checks: keyboard, focus, live regions, axe light/dark on every step, receipt states, zoom/reflow, forced colours, reduced motion. Status: PASS.
+- [ ] (2026-10-29) **Not run by Claude:** turning on VoiceOver changes a macOS accessibility setting, and that hasn't been authorized.
 - [ ] **Owner:** VoiceOver P0 (`docs/accessibility/voiceover-checklist.md`, items 1–13) in Safari, then Chrome. Fill in the Result column, word for word.
 - [ ] I fix every P0 defect, add a regression test where possible, and rerun the suite.
 - [ ] **Optional (owner):** sessions with assistive-technology users (`docs/submission/usability-testing-script.md`). Claim only the sessions that happened.
@@ -41,8 +52,9 @@
 
 ## P5: final video
 
-- [ ] `npm run video:scenes && npm run video:assemble` on the final build: five scenes, checked frame by frame.
-- [ ] Edit following `docs/submission/video-edit-plan.md`. Use the owner's purchase recording for 1:10–1:55, and never staged footage.
+- [x] (2026-10-29) Silent scenes 1–5, plus scene 6: the **real** receipt of the verified payment. Rough cut 2:16 (`npm run video:roughcut`), checked frame by frame at the seams.
+- [ ] Re-record scenes 1–5 on the final build if the UI changes. Scene 6 can't be re-made without a new payment, so keep the file.
+- [ ] Edit following `docs/submission/video-edit-plan.md`. The PayPal login and Pay stay a "NOT FILMED" card unless genuine footage exists. Optional: a recording of the business account's Activity page for that payment.
 - [ ] **Owner:** narration. Captions come from `video-captions.draft.srt`, re-timed. Add the transcript to `video-transcript.md`.
 - [ ] Check: under 3:00, 720p or 1080p, no clipping, no personal data on screen, and the badge matches the narration.
 - [ ] **Owner:** upload to YouTube as Public, but only after the go-ahead to submit.

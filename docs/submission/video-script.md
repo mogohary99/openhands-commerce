@@ -45,9 +45,10 @@ Write captions from the narration above (edit to match the actual take). Put the
 | `3-cancel-nothing-charged.mp4` | 2:25 montage: cancel at PayPal Sandbox's login page, then "Nothing was charged" | 24 s (re-recorded; the first take had an unstyled, 70 s PayPal load) |
 | `4-forced-colours.mp4` | 2:25 montage: high contrast | 16 s |
 | `5-zoom-400.mp4` | 2:25 montage: 400 % zoom (four full-resolution stills of real steps) | 14 s |
+| `6-receipt-verified.mp4` | The real receipt for the 2026-10-29 verified sandbox payment (order `6DB70558VY7613132`, capture `0X564302AP931181C`). It was reopened afterwards from a copy of the app's database, and no personal data is visible | 18 s, use 0:00–0:15 |
 
 **Still missing, and it must not be staged:**
-- **1:45–2:25:** the PayPal Sandbox login, Pay, and the receipt. These need the owner's real sandbox purchase, recorded on screen during `npm run purchase:manual` (⌘⇧5).
+- **The PayPal Sandbox login and Pay:** the 2026-10-29 purchase wasn't screen-recorded, and there will be no new payment just to film it. The cut shows a "NOT FILMED" card instead. See `video-edit-plan.md` for an optional genuine shot of the business account's Activity page.
 - The VoiceOver audio for the cold open, if used. It must be real.
 - The narration and captions. No synthetic voice has been added.
 - The 1:30 overlay diagram.
