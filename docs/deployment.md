@@ -2,12 +2,15 @@
 
 Nothing has been deployed or published. Going live needs the owner's explicit approval, and the hackathon rules require the demo to stay up and free until **Dec 15, 2026, 8:00 am PT** (`research/devpost-rules-verified.md`).
 
-**Pricing rechecked on 2026-10-29** from render.com/pricing (raw page):
-- **Plans:** the Hobby workspace is "$0 /mo + compute", and the Starter web service is "$7/month" (512 MB RAM, 0.5 CPU).
-- **Disk:** persistent disks cost "$0.25 per GB per month". Render's docs say disks need a paid service.
-- **Billing:** "billing is prorated to the second". Free web services have no persistent disk and spin down after 15 idle minutes.
-- **Estimate:** Nov 1 – Dec 15 (about 1.47 months) × $7.25 ≈ **$10.60**, unchanged from the Oct 24 estimate of about $11.
-- **The approval:** this still needs your approval and your card.
+**Pricing rechecked on 2026-10-29, second pass, from render.com/pricing and render.com/docs/faq:**
+- **Workspace:** Hobby, "$0 /mo + compute". The FAQ says "The Hobby plan does not have a monthly fee".
+- **Compute:** a Starter web service is "$7/month", with 512 MB RAM and 0.5 CPU.
+- **Disk:** "$0.25 per GB per month". A disk needs a paid service, its size can be raised but never lowered, and it has daily snapshots kept for 7 days. A service with a disk has no zero-downtime deploys.
+- **Billing:** compute and storage are "Prorated by the second", and Render "bills each workspace monthly". The card must already be on file.
+- **Included on Hobby:** 5 GB outbound bandwidth a month, then $0.15 per GB; 500 build minutes a month, then $5 per 1,000 minutes. Inbound traffic is free.
+- **Recurring:** billing continues every month until the service **and** its disk are deleted. Nothing stops automatically on Dec 15.
+- **Estimate:** a start on Oct 29 to Dec 15, 8:00 am PT is about 1.56 months × $7.25, so **about $11.30**. A start on Nov 1 is about $10.60.
+- **Anthropic API usage:** billed separately by Anthropic. Set a monthly spend limit in the Anthropic Console.
 
 ## Options compared (2026-10-24, prices from official pages; full table and sources: `research/hosting-options-2026-10.md`)
 
