@@ -116,3 +116,14 @@ test("forced colors (Windows High Contrast): problem panel keeps a visible borde
   expect(parseFloat(border)).toBeGreaterThanOrEqual(8);
   await expect(page.locator("#fix-0")).toBeVisible();
 });
+
+// Found in the first real VoiceOver pass (Safari, 2026-10-29): each option's price was read
+// twice, because the <label> already holds it and aria-describedby pointed at the same text.
+test("product options: the price is part of the name and is not repeated as a description", async ({ page }) => {
+  await searchByKeyboard(page);
+  const radio = await ax(page, "input[type=radio][value='v-charger-30w-bundle-l']");
+  expect(radio.role).toBe("radio");
+  expect(radio.name).toContain("Lightning cable");
+  expect(radio.name?.match(/with shipping and tax/g)).toHaveLength(1);
+  expect(radio.description).toBe("");
+});

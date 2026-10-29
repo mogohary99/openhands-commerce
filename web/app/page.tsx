@@ -189,11 +189,11 @@ export default async function ShopPage({ searchParams }: { searchParams: Promise
                                 value={o.variant.id}
                                 disabled={!o.inStock}
                                 defaultChecked={o.variant.id === r.bestVariantId}
-                                aria-describedby={`${id}-d`}
                               />
+                              {/* The label already holds the price, so it's read once as part of the name. */}
                               <span className="choice-body">
                                 <span className="choice-title">{o.variant.label}</span>
-                                <span id={`${id}-d`}>
+                                <span>
                                   <span className="price">{formatUsd(o.variant.priceCents)}</span>
                                   {o.inStock ? (
                                     <> · {formatUsd(o.allInCents)} with shipping and tax</>
