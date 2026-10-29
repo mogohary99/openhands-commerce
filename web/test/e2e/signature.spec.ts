@@ -17,20 +17,24 @@ test("signature moment, keyboard only: incompatible cable is caught, payment blo
   await expect(problem).toBeFocused();
   await expect(problem.locator("h2")).toHaveText("The cable will not fit your phone");
   await expect(problem).toContainText("Lightning");
-  await expect(problem).toHaveAttribute("aria-labelledby", "problem-0-title");
+  await expect(problem).toHaveAttribute("aria-label", "Problem 1: payment blocked. The cable will not fit your phone");
   await expect(page.locator("#approve-button")).toHaveAttribute("aria-disabled", "true");
   await expect(page.locator("#pay-status")).toContainText("Payment is blocked");
   await expectNoAxeViolations(page, "review (blocked)");
 
-  // "Approve anyway": nothing happens except an explanation and focus moving to the fix.
+  // "Approve anyway": nothing is charged. Focus goes back to the problem, whose name says that
+  // payment is blocked and why, so the reason is spoken by the focus move itself; a separate
+  // live message raced the focus change and VoiceOver dropped it (Safari, 2026-10-29).
   await page.locator("#approve-button").focus();
   await page.keyboard.press("Enter");
-  await expect(page.locator("#fix-0")).toBeFocused();
-  await expect(page.locator("#sr-status")).toHaveText(/Payment is blocked\. The cable will not fit your phone/);
+  await expect(problem).toBeFocused();
+  await expect(page.locator("#sr-status")).not.toContainText("Payment is blocked");
   expect(page.url()).toMatch(/\/review$/);
-  await expect(page.locator("#fix-0")).toHaveText("Switch to the USB-C cable bundle (same price)");
 
-  // One keystroke fixes it.
+  // The fix is the very next stop, and one keystroke applies it.
+  await page.keyboard.press("Tab");
+  await expect(page.locator("#fix-0")).toBeFocused();
+  await expect(page.locator("#fix-0")).toHaveText("Switch to the USB-C cable bundle (same price)");
   await page.keyboard.press("Enter");
   await expect(page.locator("#fixed-panel")).toBeFocused();
   await expect(page.locator("#fixed-panel")).toContainText("Your order now matches");

@@ -22,7 +22,10 @@ test("pages send a nonce CSP and the whole signature flow runs with no CSP viola
   await expect(page.locator("#problem-0")).toBeFocused(); // hydrated: focus was moved by script
   await page.locator("#approve-button").focus();
   await page.keyboard.press("Enter");
-  await expect(page.locator("#fix-0")).toBeFocused(); // client JS ran under the CSP
+  await expect(page.locator("#problem-0")).toBeFocused(); // client JS ran under the CSP: no navigation, focus moved back
+  expect(page.url()).toMatch(/\/review$/);
+  await page.keyboard.press("Tab");
+  await expect(page.locator("#fix-0")).toBeFocused();
   await page.keyboard.press("Enter");
   await expect(page.locator("#fixed-panel")).toBeFocused();
   expect(violations).toEqual([]);

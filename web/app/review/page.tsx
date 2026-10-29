@@ -74,10 +74,6 @@ export default async function ReviewPage({ searchParams }: { searchParams: Promi
 
   // Focus order on arrival: problem panel → success panel → notice → heading.
   const focusTarget = blocking.length ? "problem-0" : justFixed ? "fixed-panel" : notice ? "review-notice" : "review-title";
-  const firstFixId = blocking.length ? fixButtonId(0, blocking[0]!) : undefined;
-  const blockedMessage = blocking.length
-    ? `Payment is blocked. ${blocking[0]!.title}. ${firstFixId ? "Moving to the fix." : "Change your order to continue."}`
-    : "";
 
   return (
     <div className="stack">
@@ -238,9 +234,8 @@ export default async function ReviewPage({ searchParams }: { searchParams: Promi
                 <ApproveButton
                   label={`Approve and pay ${formatUsd(v.quote.totalCents)} with PayPal`}
                   blocked={!v.ok}
-                  blockedMessage={blockedMessage}
                   describedBy="pay-status"
-                  firstFixId={firstFixId}
+                  problemId={blocking.length ? "problem-0" : undefined}
                 />
               </form>
             ) : (
@@ -266,10 +261,6 @@ export default async function ReviewPage({ searchParams }: { searchParams: Promi
       </div>
     </div>
   );
-}
-
-function fixButtonId(i: number, f: Finding) {
-  return f.suggestedVariantIds.length || f.code === "PRICE_CHANGED" ? `fix-${i}` : undefined;
 }
 
 function fixedSummary(q: Quote, s: ShoppingFor) {
@@ -301,7 +292,8 @@ function ProblemPanel({
   const firstFix = f.suggestedVariantIds[0] ? findVariant(catalog, f.suggestedVariantIds[0]) : undefined;
   const spoken = [`Payment blocked. ${f.title}.`, text, firstFix ? `To fix it: ${fixLabel(f, firstFix.variant, current?.variant.priceCents)}.` : ""].join(" ");
   return (
-    <section className="problem" id={id} tabIndex={-1} aria-labelledby={`${id}-title`} aria-describedby={`${id}-desc`}>
+    <section className="problem" id={id} tabIndex={-1} aria-label={`Problem ${index + 1}: payment blocked. ${f.title}`} aria-describedby={`${id}-desc`}>
+      {/* Spelled out in aria-label: the visible label is uppercased by CSS, which Chrome copies into the name. */}
       <div className="problem-label">Problem {index + 1}: payment blocked</div>
       <h2 id={`${id}-title`}>
         <WarningIcon /> {f.title}

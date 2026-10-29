@@ -25,7 +25,7 @@ test("what a screen reader gets at the signature moment", async ({ page }) => {
 
   const panel = await ax(page, "#problem-0");
   expect(panel.role).toBe("region");
-  expect(panel.name).toBe("The cable will not fit your phone");
+  expect(panel.name).toBe("Problem 1: payment blocked. The cable will not fit your phone");
   expect(panel.description).toContain("This bundle includes a Lightning cable, but you said your phone uses USB-C");
   expect(panel.props.focused).toBe(true);
 

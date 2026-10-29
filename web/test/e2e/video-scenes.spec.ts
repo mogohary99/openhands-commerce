@@ -56,9 +56,12 @@ test("scene 1: request → results → wrong cable → blocked → one-key fix �
   await pause(page, 4000); // the problem panel, read on screen
   await page.locator("#approve-button").focus();
   await pause(page, 1500);
-  await page.keyboard.press("Enter"); // blocked: nothing is charged, focus goes to the fix
+  await page.keyboard.press("Enter"); // blocked: nothing is charged, focus returns to the problem
+  await expect(page.locator("#problem-0")).toBeFocused();
+  await pause(page, 2500);
+  await page.keyboard.press("Tab"); // the fix is the next stop
   await expect(page.locator("#fix-0")).toBeFocused();
-  await pause(page, 3000);
+  await pause(page, 2000);
   await page.keyboard.press("Enter");
   await expect(page.locator("#fixed-panel")).toBeFocused();
   await pause(page, 4000);
