@@ -26,7 +26,13 @@ test("what a screen reader gets at the signature moment", async ({ page }) => {
   const panel = await ax(page, "#problem-0");
   expect(panel.role).toBe("region");
   expect(panel.name).toBe("Problem 1: payment blocked. The cable will not fit your phone");
-  expect(panel.description).toContain("This bundle includes a Lightning cable, but you said your phone uses USB-C");
+  if (await page.getByText("Explanation written by Claude").count()) {
+    // E2E_LIVE_AI=1: the wording is Claude's (already validated server-side); check the facts.
+    expect(panel.description).toMatch(/Lightning/);
+    expect(panel.description).toMatch(/USB-C/);
+  } else {
+    expect(panel.description).toContain("This bundle includes a Lightning cable, but you said your phone uses USB-C");
+  }
   expect(panel.props.focused).toBe(true);
 
   const approve = await ax(page, "#approve-button");

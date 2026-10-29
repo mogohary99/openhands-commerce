@@ -22,6 +22,10 @@ export default defineConfig({
     env: {
       DATABASE_PATH: ".data/e2e.sqlite",
       APP_BASE_URL: `http://localhost:${PORT}`,
+      // The browser suite checks exact interface text and runs axe on it, so by default it uses the
+      // deterministic rules text. Live Claude is covered by `npm run test:live`; to drive the
+      // interface with live Claude as well, run with E2E_LIVE_AI=1.
+      ...(process.env.E2E_LIVE_AI === "1" ? {} : { ANTHROPIC_API_KEY: "" }),
     },
   },
 });
