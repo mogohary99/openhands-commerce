@@ -160,6 +160,19 @@ Earlier manual script order `946825133C0963026` was never approved; it timed out
 - It shows order `6DB70558VY7613132`, capture `0X564302AP931181C` and "PayPal Sandbox (test money only)".
 - No email, name or address appears. The original database's WAL was unchanged afterwards.
 
+### 3e. Live-Claude video footage (2026-10-29)
+
+- **Re-recorded with `E2E_LIVE_AI=1` and real `claude-opus-5-5` responses:** scenes 1, 2, 4 and 5. The rules-mode takes are kept in `docs/video/scenes-rules/` (git-ignored).
+- **Checked frame by frame:**
+  - "Finding options…" shows for about 4 s while Claude answers;
+  - the results carry "Written by Claude, checked by our rules";
+  - the review shows "Explanation written by Claude and checked against your order. The problem itself was found by our rules." Scene 1 now scrolls this line into view without moving focus;
+  - the blocked Approve → problem → fix sequence, and "$40.62 — within your $45.00 budget".
+- **Claude's on-screen claims checked against the catalog:** Basics 20W out of stock, $22.22 all in; 65W $48.20 with no cable; 30W bundle $40.62.
+- **Unchanged:** scene 3 (it would need a new PayPal order) and scene 6 (the real receipt).
+- **Cut:** 2:31, with an 8 s enlarged hold on a real frame of Claude's results. Captions: 13 cues, re-timed.
+- **Not verified:** VoiceOver reading Claude's wording. The VoiceOver passes ran before the key was configured. The accessibility-tree test with `E2E_LIVE_AI=1` does confirm the problem's description carries the facts.
+
 ### 3d. Live Claude (2026-10-29)
 
 **First real run:** 15 of 18 pass, with 3 Claude explanation tests failing. Two causes, both ours, not the model's:

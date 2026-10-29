@@ -54,6 +54,10 @@ test("scene 1: request → results → wrong cable → blocked → one-key fix �
   test.setTimeout(180_000);
   await toBlockedReview(page, 45);
   await pause(page, 4000); // the problem panel, read on screen
+  // Show who wrote the explanation ("Explanation written by Claude…" or "…explained by our rules").
+  // Scrolling doesn't move keyboard focus; the next focus() scrolls back.
+  await page.locator("p.small.muted", { hasText: /written by Claude|explained by our rules/ }).first().scrollIntoViewIfNeeded();
+  await pause(page, 3500);
   await page.locator("#approve-button").focus();
   await pause(page, 1500);
   await page.keyboard.press("Enter"); // blocked: nothing is charged, focus returns to the problem

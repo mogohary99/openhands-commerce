@@ -24,21 +24,23 @@ const card = (kind, title, sub) => `<!doctype html><meta charset="utf-8"><style>
 
 // [out-seconds, source]: a clip is {file, from, to}; a slate is {card:[kind,title,sub], secs}.
 const timeline = [
-  { file: "2-cold-open-blocked.mp4", from: 0, to: 7 },
-  { file: "1-signature-moment.mp4", from: 18.5, to: 24.5 },
+  { file: "2-cold-open-blocked.mp4", from: 11, to: 17.5 }, // the blocked review (it appears after the live Claude calls)
+  { file: "1-signature-moment.mp4", from: 33, to: 39 }, // blocked Approve → focus back to the problem → Tab to the fix
   { card: ["tomake", "OpenHands Commerce: catches the mistake before you pay.", "Fictional demo store · PayPal Sandbox · no real money"], secs: 7 },
-  { file: "1-signature-moment.mp4", from: 0, to: 14 },
-  { file: "1-signature-moment.mp4", from: 14, to: 34 },
-  { card: ["tomake", "AI explains → server decides → you approve → PayPal confirms", "The server prices every item from the catalog. AI has no tools and can't touch money."], secs: 16 },
+  { file: "1-signature-moment.mp4", from: 0, to: 19 }, // request typed, "Finding options…" while Claude answers, results
+  // A real frame of Claude's results, enlarged and held so the intro and "Written by Claude" label can be read.
+  { still: { file: "1-signature-moment.mp4", at: 17.5, crop: "640:400:0:0" }, secs: 8 },
+  { file: "1-signature-moment.mp4", from: 19, to: 42 }, // Lightning chosen, review, who wrote the explanation, blocked, fix, $40.62
+  { card: ["tomake", "Claude explains → our rules decide → you approve → PayPal confirms", "Claude writes the words; the server prices every item from the catalog and decides what's safe. Claude has no tools and can't touch money."], secs: 16 },
   // The real approval at PayPal Sandbox (2026-10-29) wasn't filmed. Show the real redirect to
   // PayPal from the cancel take, say plainly what is missing, then the real receipt of that payment.
   { file: "3-cancel-nothing-charged.mp4", from: 11.5, to: 16.5 },
   { card: ["notfilmed", "At PayPal Sandbox, the buyer logs in and presses Pay.", "That step wasn't filmed. Next: the real receipt for that payment, PayPal order 6DB70558VY7613132 (sandbox, test money)."], secs: 6 },
   { file: "6-receipt-verified.mp4", from: 0, to: 15 }, // the take then scrolls back up for a full-page screenshot; stop before it
   { file: "3-cancel-nothing-charged.mp4", from: 15, to: 19 },
-  { file: "4-forced-colours.mp4", from: 8, to: 13 },
+  { file: "4-forced-colours.mp4", from: 10.8, to: 15.6 },
   { file: "5-zoom-400.mp4", from: 0, to: 7 },
-  { card: ["tomake", "OpenHands Commerce", "The AI explains, the server decides, and you stay in control. · PayPal Sandbox · fictional store"], secs: 24 },
+  { card: ["tomake", "OpenHands Commerce", "Claude explains, our rules decide, and you stay in control. · PayPal Sandbox · fictional store"], secs: 24 },
 ];
 
 const browser = await chromium.launch();
@@ -46,7 +48,11 @@ const page = await browser.newPage({ viewport: { width: 1280, height: 800 } });
 const parts = [];
 for (const [i, row] of timeline.entries()) {
   const out = path.join(TMP, `${String(i).padStart(2, "0")}.mp4`);
-  if (row.card) {
+  if (row.still) {
+    const png = out.replace(/\.mp4$/, ".png");
+    ff(["-ss", String(row.still.at), "-i", path.join(DIR, row.still.file), "-frames:v", "1", "-vf", `crop=${row.still.crop},scale=1280:800:flags=lanczos`, png]);
+    ff(["-loop", "1", "-i", png, "-t", String(row.secs), "-r", "30", "-c:v", "libx264", "-pix_fmt", "yuv420p", out]);
+  } else if (row.card) {
     await page.setContent(card(...row.card));
     const png = out.replace(/\.mp4$/, ".png");
     await page.screenshot({ path: png });

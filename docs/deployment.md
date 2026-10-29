@@ -43,7 +43,7 @@ Blueprint: `render.yaml` at the repo root (`autoDeploy: false`). The disk pins t
 
 ## Approval checklist (one decision, then I run the rest)
 
-**What you approve:** "Create a Render Starter web service plus a 1 GB disk for OpenHands Commerce, about $11 total until Dec 15, on my card."
+**What you approve:** "Create a Render Starter web service plus a 1 GB disk for OpenHands Commerce, about $10.60 total until Dec 15, on my card." (Pricing rechecked 2026-10-29: Starter $7/month, disks $0.25/GB-month, billed per second; Hobby workspace $0.)
 
 Before it can start, you need to:
 
@@ -52,7 +52,7 @@ Before it can start, you need to:
 | 1 | Create or sign in to a Render account, and add a card | Account authentication and billing |
 | 2 | Choose where the code comes from: approve a push to a **private** GitHub repo now (Render can deploy from a private repo through its GitHub app), or wait until the repo is made public | Pushing and publishing need your approval |
 | 3 | Give the Render GitHub app access to that one repo | Third-party OAuth permission |
-| 4 | Enter the secrets in Render → Environment: `PAYPAL_CLIENT_ID`, `PAYPAL_CLIENT_SECRET` (the **rotated** sandbox keys, from a US sandbox business account), and optionally `ANTHROPIC_API_KEY` | Secrets never pass through chat or the repo |
+| 4 | Enter the secrets in Render → Environment: `PAYPAL_CLIENT_ID` and `PAYPAL_CLIENT_SECRET` from the new sandbox app `APP-7R312336N90066720` (US business account; the same values as `web/.env.local`), and `ANTHROPIC_API_KEY` for the live-Claude demo. Set a monthly spend limit in the Anthropic Console first | Secrets never pass through chat or the repo |
 | 5 | Create the sandbox webhook (step 5 below) and paste its ID into `PAYPAL_WEBHOOK_ID` | It's in the PayPal dashboard, behind your login |
 
 After approval, what I do or check:
@@ -76,6 +76,31 @@ After approval, what I do or check:
   - The home page returned 200 with `Strict-Transport-Security` and the nonce CSP.
   - The SQLite file was created in WAL mode at `DATABASE_PATH`.
 - **Still untested:** Render itself, its disk, its TLS and proxy, and webhook delivery.
+
+## Exact workflow once approved (2026-10-29)
+
+**Owner, about 15 minutes:** steps 1–4 of the approval checklist above. Then tell me "Render is ready" and give me the service URL. Never paste secrets into chat.
+
+**Claude:**
+1. Confirm `render.yaml` matches the service: Starter, Oregon, `rootDir: web`, 1 GB disk at `/var/data`, `autoDeploy: false`, health check `/api/health`.
+2. In the dashboard: set `APP_BASE_URL=https://<service>.onrender.com`, then **Manual Deploy → Deploy latest commit**.
+3. Smoke test from this Mac, reading only:
+   ```bash
+   U=https://<service>.onrender.com
+   curl -s $U/api/health            # ok, database: ok, paypal: sandbox-configured, ai: claude-configured, baseUrl: https
+   curl -sI $U/ | grep -i -E "strict-transport|content-security"
+   ```
+4. **PayPal webhook (owner, about 3 minutes):** in developer.paypal.com → the sandbox app `APP-7R312336N90066720` → Webhooks → Add:
+   - URL: `https://<service>.onrender.com/api/paypal/webhook`
+   - events: `CHECKOUT.ORDER.APPROVED`, `PAYMENT.CAPTURE.COMPLETED`, `PAYMENT.CAPTURE.DENIED`, `PAYMENT.CAPTURE.PENDING`, `PAYMENT.CAPTURE.REFUNDED`
+
+   Paste the webhook ID into Render as `PAYPAL_WEBHOOK_ID`, then redeploy. Health should then show `webhooks: configured`.
+5. **The hosted keyboard flow, without paying:** the signature moment, the blocked Approve → problem → fix → $40.62, then cancel at PayPal ("Nothing was charged").
+6. **Hosted payment:** this is the one place a new sandbox payment is useful, as proof that hosting works end to end. It's test money only, and it's **your decision**. If you approve it, you log in as the US sandbox personal account. I then verify with PayPal (COMPLETED, 40.62 USD, one capture) and check that one webhook delivery is recorded once.
+7. Restart the service; the orders must survive (that's the disk). Then take a first `db:backup`.
+8. Put the URL into Devpost and `web/README.md`, and record the results in `qa-report.md`.
+
+**Rollback:** see below. Nothing goes live without a manual deploy.
 
 ## Backups and rollback
 

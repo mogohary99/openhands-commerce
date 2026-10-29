@@ -1,69 +1,51 @@
 1
-00:00:00,000 --> 00:00:07,000
-This bundle has a Lightning cable,
-but my phone uses USB-C.
+00:00:00,000 --> 00:00:06,500
+This bundle has a Lightning cable, but my phone uses USB-C.
 
 2
-00:00:07,000 --> 00:00:13,000
-So the store refuses to take my money,
-and puts the fix right where I am.
+00:00:06,500 --> 00:00:12,500
+So the store refuses to take my money, and takes me straight to the reason and the fix.
 
 3
-00:00:13,000 --> 00:00:20,000
-OpenHands Commerce: an accessible shopping assistant
-that checks your order before PayPal opens.
+00:00:12,500 --> 00:00:19,500
+OpenHands Commerce: an accessible shopping assistant that checks your order before PayPal opens.
 
 4
-00:00:20,000 --> 00:00:27,000
-I describe what I need in my own words,
-using only the keyboard.
+00:00:19,500 --> 00:00:38,500
+I describe what I need in my own words, using only the keyboard. Claude reads my request and works out what I'm shopping for.
 
 5
-00:00:27,000 --> 00:00:34,000
-Then I pick the bundle with the wrong cable,
-the mistake you'd only catch by reading closely.
+00:00:38,500 --> 00:00:46,500
+Claude writes the explanations, and the label says so. Every price and stock fact comes from our catalog.
 
 6
-00:00:34,000 --> 00:00:44,000
-Payment is blocked, the reason is shown,
-and the fix is the very next stop.
+00:00:46,500 --> 00:01:09,500
+I pick the bundle with the wrong cable. Our rules find the problem, Claude explains it, and the fix is the next stop. One key, same price, and the total, $40.62 with shipping and tax, is within my budget.
 
 7
-00:00:44,000 --> 00:00:54,000
-One key, same price, and the total,
-including shipping and tax, is checked against my budget.
+00:01:09,500 --> 00:01:25,500
+Our server decides what's safe to buy. Claude has no tools and can't touch money, and everything it writes is checked against the order before you see it.
 
 8
-00:00:54,000 --> 00:01:02,000
-Our server works out every price from the catalog
-and decides what's safe to buy.
+00:01:25,500 --> 00:01:30,500
+PayPal creates an order bound to that exact quote. I confirm in PayPal Sandbox. It's test money only.
 
 9
-00:01:02,000 --> 00:01:10,000
-AI can help word the explanations, but it has no tools and can't touch money.
-Today you're seeing our rule-based text, and the label says so.
+00:01:36,500 --> 00:01:51,500
+We capture once, then ask PayPal directly. The receipt says paid only when PayPal reports the capture as completed, for the amount I approved.
 
 10
-00:01:10,000 --> 00:01:21,000
-PayPal creates an order bound to that exact quote.
-I confirm in PayPal Sandbox. It's test money only.
+00:01:51,500 --> 00:01:55,500
+If I cancel, nothing is charged and my order is kept.
 
 11
-00:01:21,000 --> 00:01:36,000
-We capture once, then ask PayPal directly. The receipt says paid only when
-PayPal reports it completed, for the amount I approved. Refreshing can't charge me twice.
+00:01:55,500 --> 00:02:00,300
+It works in high-contrast mode…
 
 12
-00:01:36,000 --> 00:01:40,000
-If I cancel, it says nothing was charged
-and keeps my order.
+00:02:00,300 --> 00:02:07,300
+…at 400 percent zoom, and with the keyboard alone.
 
 13
-00:01:40,000 --> 00:01:52,000
-It works in high-contrast mode, at 400 percent zoom,
-and with the keyboard alone.
-
-14
-00:01:52,000 --> 00:02:03,000
-OpenHands Commerce. The AI explains, the server decides,
-and you stay in control.
+00:02:07,300 --> 00:02:18,300
+OpenHands Commerce. Claude explains, our rules decide, and you stay in control.

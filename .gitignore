@@ -7,3 +7,4 @@ node_modules/
 
 # raw video footage (regenerate with npm run video:scenes)
 docs/video/scenes/
+docs/video/scenes-rules/

@@ -65,7 +65,25 @@
 - [ ] Check: under 3:00, 720p or 1080p, no clipping, no personal data on screen, and the badge matches the narration.
 - [ ] **Owner:** upload to YouTube as Public, but only after the go-ahead to submit.
 
+## Judge access (recommended setup)
+
+- **Hosted demo plus a dedicated US sandbox personal buyer for judges.** Judges open the URL, log in at PayPal Sandbox with that buyer, and see a real sandbox capture. Its email and password go on Devpost.
+  - It's a test login, not a real PayPal account and not a project secret.
+  - **Owner:** create it in developer.paypal.com → Sandbox → Accounts (Personal, United States). Check it logs in before Dec 1.
+- **Running it locally:** "create your own free sandbox app" (`web/README.md` → "For judges"). **Recommended: don't publish any app keys.** If you would rather publish some, create a separate judge-only sandbox app and delete it after Dec 15. Never use `APP-7R312336N90066720`.
+- **AI for judges:** the hosted demo uses our Anthropic key, with a spend limit set. Local runs work without a key: they're rules-only, and the screen says so.
+
 ## P6: publish and submit (each step needs owner approval)
+
+**Run sheet for submission day, in order:**
+1. `npm run test:all` (and once more with `E2E_LIVE_AI=1`), plus the spikes; secret scan.
+2. Export the video and check it against `video-edit-plan.md` → "Checks before upload".
+3. Hosted health check and smoke test.
+4. Fill in the Devpost **[brackets]**.
+5. **Owner:** push the public repo.
+6. **Owner:** upload the video to YouTube as Public.
+7. **Owner:** submit, then check the page from a signed-out window.
+
 
 - [ ] Resolve every **[bracket]** in devpost.md, or delete the sentence. The disclosures must match `qa-report.md` §1.
 - [ ] Decide on judge credentials: publish keys for a judge-only sandbox app, or "create your own" (`web/README.md` → "For judges"). Never publish the project's own keys.

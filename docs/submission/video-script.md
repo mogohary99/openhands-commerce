@@ -41,11 +41,13 @@ Write captions from the narration above (edit to match the actual take). Put the
 | File | Use for | Length |
 |---|---|---|
 | `2-cold-open-blocked.mp4` | 0:00–0:12 cold open (the problem panel, focused) | 18 s |
-| `1-signature-moment.mp4` | 0:20–1:30: request, options, wrong cable, blocked Approve, one-key fix, $40.62. Stops before PayPal | 35 s, trim to the cues |
+| `1-signature-moment.mp4` | **Live Claude** (re-recorded 2026-10-29): request, "Finding options…", Claude's results ("Written by Claude, checked by our rules"), wrong cable, "Explanation written by Claude…", blocked Approve → problem → fix, $40.62. Stops before PayPal | 50 s, trim to the cues |
 | `3-cancel-nothing-charged.mp4` | 2:25 montage: cancel at PayPal Sandbox's login page, then "Nothing was charged" | 24 s (re-recorded; the first take had an unstyled, 70 s PayPal load) |
 | `4-forced-colours.mp4` | 2:25 montage: high contrast | 16 s |
 | `5-zoom-400.mp4` | 2:25 montage: 400 % zoom (four full-resolution stills of real steps) | 14 s |
 | `6-receipt-verified.mp4` | The real receipt for the 2026-10-29 verified sandbox payment (order `6DB70558VY7613132`, capture `0X564302AP931181C`). It was reopened afterwards from a copy of the app's database, and no personal data is visible | 18 s, use 0:00–0:15 |
+
+**Live Claude footage:** scenes 1, 2, 4 and 5 were re-recorded with real `claude-opus-5-5` responses (`E2E_LIVE_AI=1`). The rules-mode takes are in `docs/video/scenes-rules/`. The cut and its narration are in `video-edit-plan.md`.
 
 **Still missing, and it must not be staged:**
 - **The PayPal Sandbox login and Pay:** the 2026-10-29 purchase wasn't screen-recorded, and there will be no new payment just to film it. The cut shows a "NOT FILMED" card instead. See `video-edit-plan.md` for an optional genuine shot of the business account's Activity page.
