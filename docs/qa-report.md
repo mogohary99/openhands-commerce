@@ -29,6 +29,8 @@ Legend: **LIVE** = real call to PayPal Sandbox / Anthropic. **AUTO** = automated
 | `web: npm audit --omit=dev` | 0 vulnerabilities |
 | Secret in git history | 0 matches (all revisions) |
 
+**Full run 2026-10-29, after the VoiceOver fix: exit 0.** Typecheck clean, build ok. Unit **84/84**. Live: 11 pass, 0 fail, 7 skipped (no Anthropic key). E2E: 47 tests, **40 pass, 0 fail, 7 skipped** (buyer purchase, manual purchase, 5 video recordings), no retries. Spikes: 23 pass, 3 skipped. `npm audit --omit=dev`: 0 vulnerabilities.
+
 **Full run 2026-10-29, later (new app `APP-7R312336N90066720`, after the verified purchase and the fresh-id test correction, commit `2117d0d`): exit 0.** Typecheck clean, build ok. Unit **84/84**. Live: 11 pass, 0 fail, 7 skipped (no Anthropic key). E2E: 46 tests, **39 pass, 0 fail, 7 skipped** (buyer purchase, manual purchase, 5 video recordings), no retries logged. Spikes: 23 pass, 0 fail, 3 skipped. `npm audit --omit=dev`: 0 vulnerabilities. Secret scan (old and new PayPal keys, all files and all history): 0 hits.
 
 **Full run 2026-10-29 (commit `033a42d`, still the old sandbox app `APP-1EV4688594317942R`): exit 0.** Typecheck clean, build ok. Unit **84/84**. Live: 11 pass, 0 fail, 7 skipped (no Anthropic key). E2E: 46 tests, **39 pass, 0 fail, 7 skipped** (buyer purchase, manual purchase, 5 video recordings), no retries logged. Spikes: 23 pass, 0 fail, 3 skipped. `npm audit --omit=dev`: 0 vulnerabilities.
@@ -245,6 +247,23 @@ Earlier manual script order `946825133C0963026` was never approved; it timed out
 **Rotating the sandbox secret:** developer.paypal.com → log in → *Apps & Credentials* → make sure the **Sandbox** toggle is selected → open the app → under *Secret key*, *Generate new secret* (or add a second secret, switch, then delete the old one) → paste the new value into `web/.env.local` and `spikes/.env.local` yourself → `npm run test:live` to confirm.
 
 ## 6. Accessibility findings
+
+### 6a. First VoiceOver pass: Safari, 2026-10-29, partial
+
+**Setup:** run by Claude with the owner's permission, on macOS 26.2, Safari and VoiceOver. VoiceOver was off before the run and off afterwards. Its AppleScript control was not enabled, and no other setting was changed. The app ran locally from a scratch copy of the database.
+
+**Method:** keystrokes sent with System Events. VoiceOver's caption panel was read after each step.
+
+**What this is not:** a VoiceOver user, or a listening test.
+
+**Results:** item by item, with the exact captions, in `docs/accessibility/voiceover-checklist.md`.
+- **Pass:** P0 items 1–8, 10 and 11.
+- **Defect found and fixed (item 5):** product option prices were read twice. The `<label>` holds the price, and `aria-describedby` repeated it. A regression test (`a11y-tree.spec.ts`) fails on the old code and passes with the fix, and the corrected announcement was re-checked in VoiceOver.
+- **Item 9 (partial):** focus moves to the fix and nothing is charged. The polite "Payment is blocked…" live message was **not observed** in the caption, because the focus announcement followed straight away.
+- **Item 12:** not run, because it would need a new payment.
+- **Item 13:** not verified with speech. VoiceOver had been turned off outside the script by then, and the run was stopped because Terminal kept coming to the front (the Mac was in use).
+- **Not run:** P0 in Chrome, P1 and P2.
+- **During the run:** one stray ⌘R reached Terminal and toggled its "Allow Mouse Reporting" view option. It was immediately toggled back (the caption read "Allow Mouse Reporting, checked").
 
 | Check | Type | Result |
 |---|---|---|

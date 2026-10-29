@@ -64,7 +64,7 @@ What we did (details and evidence in `docs/qa-report.md` §6):
 - Optional voice input (never submits by itself) and "Read this problem aloud" (never auto-plays).
 
 What we have **not** done, stated plainly:
-- **[No manual screen-reader testing yet (VoiceOver/NVDA/JAWS/TalkBack), no Voice Control or Switch Control testing — update if the owner's VoiceOver pass happens.]**
+- **A first VoiceOver pass (macOS Safari, 2026-10-29) was driven by keystrokes and read from VoiceOver's caption panel; it was not a test by a VoiceOver user.** 10 of the 13 signature-flow checks passed. It found one real defect, prices read twice, which is now fixed with a regression test. The blocked-payment message (9) is partial, and the receipt check (13) wasn't verified with speech. **[Update if the owner's own VoiceOver pass happens.]** No NVDA, JAWS, TalkBack, Voice Control or Switch Control testing, and no testing with disabled users.
 - **No testing with disabled users yet.** A usability-testing script is ready (`docs/submission/usability-testing-script.md`).
 - We do not claim WCAG conformance or certification. Automated tools find only part of real barriers.
 - PayPal's hosted checkout pages are outside our control and were not evaluated.
@@ -113,7 +113,7 @@ next.js · react · typescript · paypal-orders-api · paypal-webhooks · paypal
   - **Payment:** one real PayPal Sandbox buyer approval and capture, verified with PayPal's API: order `6DB70558VY7613132`, capture `0X564302AP931181C`, COMPLETED, 40.62 USD, one capture.
   - **Automated tests:** 84 unit, 11 live PayPal Sandbox and 39 browser tests (keyboard, focus, axe, zoom and reflow, forced colours, reduced motion).
   - **Video:** the buyer's login and Pay at PayPal aren't filmed. The receipt shown is the real receipt for that payment.
-  - **Not tested:** **[live Claude]**, **[VoiceOver / other assistive technology]**, testing with disabled users, the hosted deployment and real webhook delivery. **[Update each bracket before submitting.]**
+  - **Not tested:** **[live Claude]**, **[VoiceOver beyond the partial Safari pass; other assistive technology]**, testing with disabled users, the hosted deployment and real webhook delivery. **[Update each bracket before submitting.]**
 
 ## Video
 
