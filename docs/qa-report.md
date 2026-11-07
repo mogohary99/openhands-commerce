@@ -32,6 +32,15 @@ Legend: **LIVE** = real call to PayPal Sandbox / Anthropic. **AUTO** = automated
 | `web: npm audit --omit=dev` | 0 vulnerabilities |
 | Secret in git history | 0 matches (all revisions) |
 
+**Release gates, 2026-11-07 (repo made public; narrated video; free-hosting option): exit 0.**
+- `npm run test:all` at `4ed9bbf`: typecheck clean, build ok, unit **86/86**, live **18/18** (11 PayPal Sandbox + 7 real Claude), browser **41 pass, 0 fail, 7 skipped** (the same 7 as below). No new PayPal capture.
+- Then `ephemeral-store.test.ts` was added (the database is wiped after PayPal approval, and nothing is captured or shown as paid): unit **87/87**, typecheck clean.
+- Spikes **26/26**. `npm audit --omit=dev`: 0 vulnerabilities.
+- **Secret scan before making the repo public, and again before each push:** the 5 distinct local secret values had 0 hits in 150 tracked files and in all 635 history objects. One pattern hit is a `package-lock.json` integrity hash, not a secret.
+- **Public clone, signed out,** at `477626c`: `npm ci`, build and typecheck ok; unit 87/87. `npm start` with no keys: health `ok`, `paypal: not-configured`, `ai: rules-only`, and the home page renders the demo example.
+- **Video:** `final.mp4` is 151.3 s, H.264 plus AAC, −14.1 LUFS integrated, −1.4 dBFS true peak. The narration is synthesized (macOS `say`, Samantha) and disclosed.
+- **Not tested:** any hosted deployment (no host yet).
+
 **Final gates, 2026-10-29 evening (after the rate-limit and AI-budget change and the hosted suite): exit 0.**
 - `npm run test:all`: typecheck clean, build ok, unit **86/86**, live **18/18** (11 PayPal Sandbox + 7 Claude), browser **41 pass, 0 fail, 7 skipped**, 0 PayPal retries logged.
   - The 7 skipped: the automated buyer purchase (no stored password, by design), `purchase:manual` (owner only), and 5 video-scene recordings (on demand).

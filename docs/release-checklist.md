@@ -1,6 +1,6 @@
 # Release checklist, in priority order
 
-**Status on 2026-10-29 (evening):** the code, tests, payment evidence, live Claude, VoiceOver passes and the silent video master are done. **Still missing, and each needs the owner:** hosting, a judge buyer, narration, and the publishing approvals.
+**Status on 2026-11-07:** the repo is **public**, the narrated video is finished (disclosed synthesized voice), and the Devpost text is paste-ready. **Still missing:** the YouTube upload and the Devpost submission (these need the owner's signed-in browser and the owner's acceptance of the terms), plus the optional $0 hosted demo (`render.free.yaml`). Current status: `FINAL_DEVPOST_SUBMISSION_REPORT.md`.
 
 **Deadline:** Nov 12, 12:00 pm PT. Nothing can change after it.
 - **Early check:** Devpost's Oct 28 update says submissions made by **Thu Nov 5** get an early eligibility check, and can still be edited until the deadline.
@@ -13,6 +13,9 @@
 - [x] VoiceOver P0 passes in Safari and Chrome (run by Claude with the owner's permission; not a VoiceOver user). Two defects were fixed.
 - [x] The private GitHub repo `mogohary99/openhands-commerce`. The secret scan was clean, it builds independently from a fresh clone, and GitHub detects the Apache-2.0 licence.
 - [x] The silent video master at 2:31, with captions, the prompter and narration mixing; the YouTube text and thumbnail.
+- [x] Repo made **public** on 2026-11-07, after a clean secret scan; a signed-out clone builds and passes its tests.
+- [x] Narration: macOS text-to-speech, cue-synced, −14.1 LUFS, disclosed in the YouTube description.
+- [x] $0 hosting option: `render.free.yaml`, plus a wiped-database fail-safe test.
 - [x] Rate limits made resistant to a made-up `X-Forwarded-For`; an hourly Claude budget.
 
 ## Owner actions, in order

@@ -1,4 +1,6 @@
-# Final launch readiness: 2026-10-29 (evening)
+# Final launch readiness: 2026-10-29 (evening), updated 2026-11-07
+
+> **2026-11-07:** the repo is now **PUBLIC** (owner-authorised, after a clean secret scan); a signed-out clone builds and passes 87/87 unit tests. The video is narrated with a disclosed synthesized voice. A $0 Render Free Blueprint has been added. YouTube and Devpost are still pending, since they need the owner's browser. Current status: `FINAL_DEVPOST_SUBMISSION_REPORT.md`. The sections below are the 2026-10-29 record.
 
 **Deadline:** Thu Nov 12, 2026, 12:00 pm PT. This was rechecked on devpost.com on 2026-10-29, with the same wording as before.
 - **Early check:** Devpost's Oct 28 update says projects submitted by **Thu Nov 5** get an early eligibility check, and can still be edited until the deadline. **New target:** submit by Nov 5, then refine.
