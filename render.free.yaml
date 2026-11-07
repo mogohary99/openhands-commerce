@@ -1,0 +1,40 @@
+# FREE Render Blueprint for OpenHands Commerce ($0, no card). The paid one is render.yaml.
+# Render reads render.yaml by default; to use this file, set "Blueprint Path" to
+# render.free.yaml when creating the Blueprint (New > Blueprint). See docs/deployment.md,
+# "Free hosting (Render Free, $0)".
+#
+# Free web services have no persistent disk and an ephemeral filesystem: the SQLite file is
+# lost on every restart, spin-down (15 min idle) and deploy. That only resets demo state;
+# an order the database no longer knows is never captured and never shown as paid.
+services:
+  - type: web
+    name: openhands-commerce-free
+    runtime: node
+    plan: free # no disk on free instances
+    region: oregon
+    rootDir: web
+    buildCommand: npm ci && npm run build
+    startCommand: npm start
+    healthCheckPath: /api/health
+    autoDeploy: false
+    envVars:
+      - key: NODE_VERSION
+        value: "20.20.2"
+      - key: NODE_ENV
+        value: production
+      # Ephemeral on purpose (no disk). The directory is created at startup.
+      - key: DATABASE_PATH
+        value: /tmp/openhands/openhands.sqlite
+      # The public https URL of this service, e.g. https://openhands-commerce-free.onrender.com
+      # (no trailing slash). PayPal return/cancel URLs are built from it.
+      - key: APP_BASE_URL
+        sync: false
+      # Secrets: entered in the Render dashboard, never committed. Sandbox credentials only.
+      - key: PAYPAL_CLIENT_ID
+        sync: false
+      - key: PAYPAL_CLIENT_SECRET
+        sync: false
+      - key: PAYPAL_WEBHOOK_ID
+        sync: false
+      - key: ANTHROPIC_API_KEY
+        sync: false

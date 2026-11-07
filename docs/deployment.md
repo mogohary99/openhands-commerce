@@ -22,7 +22,7 @@ The app needs one always-on Node process, a disk that survives restarts and depl
 | **Render**: Starter + 1 GB disk (`render.yaml` ready) | **≈ $11** | The least setup, and the blueprint is already written. Brief downtime on each deploy because of the disk |
 | Railway Hobby + volume | ≈ $10 | Similar to Render. The usage estimate is unverified |
 | Hetzner CX23 + Caddy | ≈ €9 | You run the server yourself. EU only at that price |
-| Render Free, Koyeb Free | $0 | **Not viable**: no persistent disk, and they sleep |
+| Render Free, Koyeb Free | $0 | No persistent disk, and they sleep. **Render Free is now prepared as the $0 option** (`render.free.yaml`; see "Free hosting (Render Free, $0)"): demo data resets on restart, which is fail-safe. Koyeb no longer lists free compute (2026-11-07) |
 | Vercel / Netlify | $0 | **Not viable without a rewrite**: no durable filesystem. Would need libSQL, with locks and rate limits moved into the database |
 | Oracle Always Free, GCP e2-micro, Northflank Sandbox | $0 | **Not recommended**: idle reclamation (Oracle), DIY ops and 1 GB RAM (GCP), "not for production" (Northflank). All need a card |
 
@@ -31,6 +31,67 @@ The app needs one always-on Node process, a disk that survives restarts and depl
 Why not a free tier: the free tiers that sleep or have no disk would either lose orders on restart or keep judges waiting about a minute on first load. The rules require the demo to stay available until Dec 15.
 
 Blueprint: `render.yaml` at the repo root (`autoDeploy: false`). The disk pins the service to one instance, which is exactly what the in-process compare-and-set locks and rate limits assume.
+
+## Free hosting (Render Free, $0)
+
+A $0 option, with no card on file and no disk. The trade-off: the first visit after 15 minutes idle waits about a minute, and demo data resets whenever the instance restarts. Blueprint: `render.free.yaml` (the paid `render.yaml` is unchanged).
+
+**Terms, checked 2026-11-07 on render.com/docs:**
+- [docs/free](https://render.com/docs/free):
+  - "Render spins down a Free web service that goes 15 minutes without receiving any inbound traffic." Spinning back up "takes about one minute."
+  - "Like all Render services, Free web services have an ephemeral filesystem." Changes are "lost every time the service redeploys, restarts, or spins down."
+  - Free services can't keep files: "Paid services can preserve local filesystem changes by attaching a persistent disk, but Free web services cannot."
+  - "Render might restart a Free web service at any time."
+  - "Render grants 750 Free instance hours to each workspace per calendar month." One always-awake service needs about 744 hours.
+  - With no card, overages don't bill: "If you haven't added a payment method, Render instead suspends all of your Free services for the remainder of the month." The docs don't say a card is needed to start.
+- [docs/build-pipeline](https://render.com/docs/build-pipeline):
+  - Hobby gets 500 included pipeline minutes a month. Once they're used up with no payment method, "Render stops running pipeline tasks (including service builds!) for the remainder of the current month."
+  - Builds time out "after 120 minutes".
+- [docs/infrastructure-as-code](https://render.com/docs/infrastructure-as-code):
+  - "By default, Render looks for the `render.yaml` file at the root of your repo, but you can define your Blueprint file anywhere."
+  - Setting the file: "specify a custom file path to your Blueprint's YAML file in the Blueprint Path field."
+  - Linking a Git account: "You'll first need to connect your Git provider account if you haven't yet." So a Blueprint needs Render connected to GitHub.
+  - The no-GitHub-app route is a plain web service from a public URL ([docs/web-services](https://render.com/docs/web-services): "Render does not support auto-deploys" there). That route sets no Blueprint, so you enter the same fields by hand.
+
+**Why not other $0 hosts:**
+- **Vercel and Cloudflare Workers:** no writable persistent filesystem for better-sqlite3. They would need a database migration, which is out of scope.
+- **Hugging Face Docker Spaces:** now "require a paid plan to create" ([spaces-overview](https://huggingface.co/docs/hub/spaces-overview)).
+- **Koyeb:** its [pricing page](https://www.koyeb.com/pricing) lists no free compute instance, only free Postgres.
+
+### Owner steps (about 10 minutes)
+
+1. Sign in at dashboard.render.com with GitHub. No card is needed. Allow the Render GitHub app access to `mogohary99/openhands-commerce` only.
+2. **New → Blueprint** → pick the repo → set **Blueprint Path** to `render.free.yaml`. It creates `openhands-commerce-free` (Free, Oregon, `rootDir: web`, no disk).
+3. When it asks for the `sync: false` values, enter:
+   - the rotated **sandbox** `PAYPAL_CLIENT_ID` and `PAYPAL_CLIENT_SECRET`
+   - `ANTHROPIC_API_KEY` (optional; set a spend limit in the Anthropic Console first)
+   - leave `PAYPAL_WEBHOOK_ID` blank for now, and set `APP_BASE_URL` to `https://openhands-commerce-free.onrender.com`. Fix it after the first deploy if Render gives a different hostname. No trailing slash.
+4. Apply. Then run **Manual Deploy → Deploy latest commit**: `autoDeploy` is off, so nothing goes live by itself.
+5. Check `https://<host>/api/health`. It should show `"ok": true, "database": "ok", "paypal": "sandbox-configured", "baseUrl": "https"`.
+6. Optional webhook: add one as in step 5 of "Steps (owner)" below, with URL `https://<host>/api/paypal/webhook`. Paste its ID into `PAYPAL_WEBHOOK_ID`, then redeploy.
+7. From `web/` on your machine: `HOSTED_URL=https://<host> npm run test:e2e`. This runs `hosted.spec.ts` and every browser spec that doesn't seed the local database. Wake the service first (`curl https://<host>/api/health`, about a minute when cold), so the first test doesn't time out.
+
+### Limits
+
+- **Cold start:** about one minute after 15 minutes without traffic.
+- **Demo data resets:** this happens on every restart, spin-down or deploy. Carts, approvals, orders, receipts, webhook dedup records and the audit log are all lost. In-memory rate limits reset too.
+- **Free hours:** 750 a month per workspace. Keep it to this one free service, or a second one can use up the hours.
+- **Build minutes:** 500 a month. Builds stop for the month if they run out.
+- **No shell, no backups:** `db:backup` doesn't apply, because there is nothing durable to back up.
+
+### Why a wiped database is fail-safe
+
+A missing row always means "not found". It never means "capture", and it never means "paid":
+- **The buyer approves at PayPal, the instance restarts, then the return arrives.** `completePayment` looks the token up with `getOrderByPayPalId`. It finds no row and returns `not_found` before any PayPal call (`web/lib/checkout.ts:143-144`). The return route then redirects to `/?notice=not_found` (`web/app/checkout/return/route.ts:42-43`). The approved PayPal order is never captured, so nothing is charged.
+- **A verified webhook for that order:** it is recorded, but `row` is null, so `reconcile` never runs (`web/lib/checkout.ts:361-366`).
+- **"Check again" or an old receipt link:**
+  - `recheckAction` redirects home when `getOrder` is null (`web/app/actions.ts:144-145`), and `reconcile` returns `not_found` (`web/lib/checkout.ts:314-315`).
+  - The receipt page 404s (`web/app/receipt/[id]/page.tsx:30-31`).
+  - A receipt only says paid when the state is `COMPLETED` (`page.tsx:37`). That state is written only after PayPal returns a COMPLETED capture whose amount matches (`web/lib/checkout.ts:252-258`).
+- **The session cookie** survives the restart, but it only points at rows that no longer exist.
+- **Regression test:** `web/test/unit/ephemeral-store.test.ts` deletes the SQLite file after approval. It then checks that the return, a capture webhook and a recheck all lead to zero capture calls.
+
+**Remaining risk:** a restart in the instant after PayPal captured but before the row was saved. With a disk, that row would stay `CAPTURING` and be recovered later. On Free the row is gone, so the sandbox payment exists only at PayPal. Nothing in the app ever claims it was paid. The window is the length of one capture request, and Render doesn't spin down while a request is coming in. If it happens, find the order in the sandbox business account's activity.
 
 ## Steps (owner)
 
