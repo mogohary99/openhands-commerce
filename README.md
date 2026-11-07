@@ -15,16 +15,23 @@ Built for the PayPal AI Hackathon 2026. Fictional demo store · **PayPal Sandbox
 
 **The AI explains, the server decides, you approve.** Claude helps understand requests and phrase explanations; it has no tools, cannot reach payment code, and every sentence it writes is validated. Without an API key the app runs on its rule-based fallback and says so.
 
-## Run it
+## Try it
+
+**Hosted demo:** [hosted demo URL: pending]
+
+**Run it yourself (about 10 minutes).** You need Node 20.9 or later and your own free PayPal Sandbox app (test money only). Claude is optional.
 
 ```sh
-cd web
-cp .env.example .env.local   # PayPal *sandbox* app keys; ANTHROPIC_API_KEY optional
+git clone https://github.com/mogohary99/openhands-commerce.git
+cd openhands-commerce/web
 npm ci
-npm run build && npm start   # http://localhost:3000
+cp .env.example .env.local   # add your PayPal *sandbox* Client ID and Secret; ANTHROPIC_API_KEY optional
+npm run dev                  # http://localhost:3000
 ```
 
-Tests: `npm run typecheck`, `npm test` (unit), `npm run test:live` (real PayPal Sandbox / Claude; skipped without keys), `npm run test:e2e` (Chrome via Playwright: keyboard flow, axe, accessibility tree, reflow, CSP, live sandbox). Details: [`web/README.md`](web/README.md).
+Then click the first example, "My phone uses USB-C. I need a charger with a cable, forty-five dollars all in.", pick the Lightning cable bundle and watch payment get blocked. Step-by-step setup, the demo script, tests and troubleshooting: [`web/README.md` → For judges](web/README.md#for-judges).
+
+**Evidence of a real sandbox purchase:** order `6DB70558VY7613132`, capture `0X564302AP931181C`, `COMPLETED`, 40.62 USD, confirmed by PayPal's own API ([`docs/evidence/sandbox-purchase-manual-buyer.json`](docs/evidence/sandbox-purchase-manual-buyer.json), [`docs/qa-report.md`](docs/qa-report.md) §3a).
 
 ## Docs
 
@@ -41,4 +48,4 @@ Tests: `npm run typecheck`, `npm test` (unit), `npm run test:live` (real PayPal 
 
 - The OpenHands Demo Store and its products, prices and reviews are fictional demo data. OpenHands does not shop at arbitrary merchants.
 - Payments are PayPal Sandbox only; the code cannot reach live PayPal.
-- Accessibility is checked automatically (axe, keyboard, accessibility tree, zoom, contrast modes). Manual screen-reader testing and sessions with disabled users are listed in the QA report as not yet done until they happen. No WCAG conformance claim is made.
+- Accessibility is checked automatically (axe, keyboard, accessibility tree, zoom, contrast modes). VoiceOver on macOS was run by the developer's AI assistant (Claude), not by blind or low-vision users. No sessions with disabled users have happened yet. NVDA, JAWS and TalkBack were not tested. No WCAG conformance or certification is claimed.
